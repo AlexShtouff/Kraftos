@@ -1,0 +1,1 @@
+This HTML document is a simple web application that allows users to convert Israeli Transverse Mercator (ITM) coordinates to GPS coordinates (WGS84). It uses the proj4.js library for the coordinate transformation and provides links to view the converted coordinates on Google Maps and Yandex Maps.
