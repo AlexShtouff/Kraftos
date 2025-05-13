@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+  <meta charset="UTF-8">
+  <title>המרת קואורדינטות ל-GPS</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.6/proj4.js"></script>
+  <style>
+    body { font-family: sans-serif; direction: rtl; padding: 20px; max-width: 600px; margin: auto; }
+    input, select, button { font-size: 16px; padding: 8px; margin-top: 10px; width: 100%; box-sizing: border-box; }
+    .output { margin-top: 20px; font-weight: bold; }
+    .map-links a { display: block; margin: 10px 0; text-align: center; background: #007BFF; color: white; text-decoration: none; padding: 10px; border-radius: 5px; }
+  </style>
+</head>
+<body>
+
+  <h2>המרת קואורדינטות ישראליות ל-GPS</h2>
+
+  <label for="x">X (מזרח):</label>
+  <input id="x" type="number" placeholder="למשל: 221123">
+
+  <label for="y">Y (צפון):</label>
+  <input id="y" type="number" placeholder="למשל: 633222">
+
+  <button onclick="convert()">המר</button>
+
+  <div class="output" id="output"></div>
+
+  <div class="map-links" id="mapLinks" style="display:none;">
+    <a id="googleLink" href="#" target="_blank">פתח ב-Google Maps</a>
+    <a id="yandexLink" href="#" target="_blank">פתח ב-Yandex Maps</a>
+    <a id="geoLink" href="#">פתח באפליקציית ניווט</a>
+  </div>
+
+  <script>
+    // Define ITM and WGS84 projections
+    proj4.defs("ITM","+proj=tmerc +lat_0=31.73439361111111 +lon_0=35.2045169444444 +k=1.0000067 +x_0=219529.58 +y_0=626907.39 +ellps=GRS80 +units=m +no_defs");
+    const ITM = proj4("ITM");
+    const WGS84 = proj4("WGS84");
+
+    function convert() {
+      const x = parseFloat(document.getElementById('x').value);
+      const y = parseFloat(document.getElementById('y').value);
+
+      if (isNaN(x) || isNaN(y)) {
+        alert("נא להזין ערכים תקינים ל-X ו-Y");
+        return;
+      }
+
+      const [lon, lat] = proj4(ITM, WGS84, [x, y]);
+      console.log("Converted:", lat, lon);
+
+      if (isNaN(lat) || isNaN(lon)) {
+        alert("המרה נכשלה. ייתכן שהקואורדינטות מחוץ לטווח התקין.");
+        return;
+      }
+
+      document.getElementById('output').innerHTML = `
+        קואורדינטות GPS:<br>
+        Latitude (רוחב): ${lat.toFixed(6)}<br>
+        Longitude (אורך): ${lon.toFixed(6)}
+      `;
+
+      document.getElementById('googleLink').href = `https://www.google.com/maps?q=${lat},${lon}`;
+      document.getElementById('yandexLink').href = `https://yandex.com/maps/?ll=${lon}%2C${lat}&z=16`;
+      document.getElementById('geoLink').href = `geo:${lat},${lon}?q=${lat},${lon}`;
+
+      document.getElementById('mapLinks').style.display = 'block';
+    }
+  </script>
+
+</body>
+</html>
