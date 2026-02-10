@@ -1,55 +1,615 @@
 <!DOCTYPE html>
-<html lang="he">
+<html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <title>המרת קואורדינטות ל-GPS</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.15.0/proj4.js"></script>
-  <style>
-    body { font-family: sans-serif; direction: rtl; padding: 20px; max-width: 600px; margin: auto; }
-    input, select, button { font-size: 16px; padding: 8px; margin-top: 10px; width: 100%; box-sizing: border-box; }
-    .output { margin-top: 20px; font-weight: bold; }
-    .map-links a { display: block; margin: 10px 0; text-align: center; background: #007BFF; color: white; text-decoration: none; padding: 10px; border-radius: 5px; }
-  </style>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ITM to WGS84 Converter</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles for the application */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .result-box {
+            background-color: #f0f9ff;
+            /* light blue */
+            border-left: 4px solid #0ea5e9;
+            /* sky-500 */
+        }
+
+        .result-box.success {
+            background-color: #f0fdf4;
+            /* light green */
+            border-left-color: #22c55e;
+            /* green-500 */
+        }
+
+        .result-box.success .text-sm {
+            color: #15803d;
+            /* green-800 */
+        }
+
+        .result-box.success .result-value {
+            color: #166534;
+            /* green-900 */
+        }
+
+        .result-value {
+            font-family: monospace;
+            font-size: 1.125rem;
+            /* text-lg */
+        }
+
+        /* --- MAP BUTTONS --- */
+        .map-button,
+        .map-button-csv {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+            text-decoration: none;
+            transition: transform 0.15s;
+        }
+
+        .map-button:hover,
+        .map-button-csv:hover {
+            transform: scale(1.05);
+        }
+
+        /* For manual conversion section */
+        .map-button:nth-of-type(1) {
+            background-color: #3b82f6;
+            /* bg-blue-500 */
+        }
+
+        .map-button:nth-of-type(1):hover {
+            background-color: #2563eb;
+            /* bg-blue-600 */
+        }
+
+        .map-button:nth-of-type(2) {
+            background-color: #22c55e;
+            /* bg-green-500 */
+        }
+
+        .map-button:nth-of-type(2):hover {
+            background-color: #16a34a;
+            /* bg-green-600 */
+        }
+
+        /* For CSV results table and My Points cards */
+        .map-button-csv {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            margin: 0.125rem;
+        }
+
+        .map-button-csv.google {
+            background-color: #3b82f6;
+            /* bg-blue-500 */
+        }
+
+        .map-button-csv.google:hover {
+            background-color: #2563eb;
+            /* bg-blue-600 */
+        }
+
+        .map-button-csv.waze {
+            background-color: #22c55e;
+            /* bg-green-500 */
+        }
+
+        .map-button-csv.waze:hover {
+            background-color: #16a34a;
+            /* bg-green-600 */
+        }
+
+        /* --- END MAP BUTTONS --- */
+
+
+        /* --- CSV Table --- */
+        .csv-table-container {
+            max-height: 400px;
+            /* Increased height */
+            overflow-y: auto;
+            margin-top: 1.5rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+        }
+
+        .csv-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .csv-table th,
+        .csv-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 0.875rem;
+            /* text-sm */
+        }
+
+        .csv-table th {
+            background-color: #f9fafb;
+            /* bg-gray-50 */
+            font-weight: 600;
+            /* font-semibold */
+            color: #374151;
+            /* text-gray-700 */
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        .csv-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .csv-table tbody tr.success {
+            background-color: #f0fdf4;
+            /* light green */
+        }
+
+
+        /* --- My Points Card Layout --- */
+        #my-points-container {
+            max-height: 500px;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+            /* Space for scrollbar */
+        }
+
+        .point-card {
+            border: 1px solid #d1d5db;
+            /* gray-300 */
+            border-radius: 0.75rem;
+            /* rounded-xl */
+            background-color: #ffffff;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            overflow: hidden;
+        }
+
+        .point-header {
+            background-color: #f9fafb;
+            /* bg-gray-50 */
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #d1d5db;
+        }
+
+        .point-name {
+            font-size: 1.125rem;
+            /* text-lg */
+            font-weight: 600;
+            /* font-semibold */
+            color: #111827;
+            /* text-gray-900 */
+        }
+
+        .point-body {
+            padding: 1rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            /* Default to 2 columns for desktop */
+            gap: 0.75rem;
+        }
+
+        .point-detail {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #f9fafb;
+            /* bg-gray-50 */
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.375rem;
+            /* rounded-md */
+        }
+
+        .point-detail-label {
+            font-size: 0.875rem;
+            /* text-sm */
+            color: #4b5563;
+            /* text-gray-600 */
+            font-weight: 500;
+        }
+
+        .point-detail-value {
+            font-size: 0.875rem;
+            /* text-sm */
+            color: #1f2937;
+            /* text-gray-800 */
+            font-family: monospace;
+        }
+
+        .point-distance {
+            grid-column: 1 / -1;
+            /* Span full width */
+            text-align: center;
+            margin-top: 0.5rem;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #1d4ed8;
+            /* blue-700 */
+        }
+
+        .point-actions {
+            grid-column: 1 / -1;
+            /* Span full width */
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        /* --- Device Toggle Styles --- */
+        .device-toggle input:checked+div {
+            background-color: #4f46e5;
+            /* indigo-600 */
+            color: white;
+            border-color: #4f46e5;
+        }
+
+        .device-toggle div {
+            transition: all 0.2s;
+        }
+
+
+        /* --- NEW: Mobile Optimizations --- */
+        @media (max-width: 767px) {
+
+            /* On mobile, change the point card's body to a single column */
+            .point-body {
+                grid-template-columns: 1fr;
+            }
+
+            /* Reduce font size of main title on mobile */
+            h1 {
+                font-size: 1.5rem;
+                /* text-2xl */
+            }
+
+            /* Make map buttons in manual section a bit smaller on mobile */
+            .map-button {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.875rem;
+            }
+        }
+    </style>
 </head>
-<body>
 
-<h2>המרת קואורדינטות ישראליות ל-GPS</h2>
+<body class="bg-gray-100">
+    <div class="w-full max-w-4xl bg-white rounded-none md:rounded-xl shadow-lg overflow-hidden my-0 md:my-4">
+        <div class="md:flex">
+            <div class="md:w-1/2 p-4 md:p-6">
+                <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-6 text-center">Coordinate Converter</h1>
 
-<input type="number" id="x" placeholder="הכנס קואורדינת X (East)">
-<input type="number" id="y" placeholder="הכנס קואורדינת Y (North)">
-<button onclick="convert()">המר</button>
+                <div class="relative inline-block text-left w-full mb-6">
+                    <div>
+                        <button type="button"
+                            class="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                            id="options-menu" aria-haspopup="true" aria-expanded="true">
+                            Select Mode
+                            <svg class="-mr-1 ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd"
+                                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                    clip-rule="evenodd"></path>
+                            </svg>
+                        </button>
+                    </div>
 
-<div class="output" id="result"></div>
-<div class="map-links" id="mapLinks"></div>
+                    <div id="mode-dropdown"
+                        class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 hidden z-10">
+                        <div class="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
+                            <a href="#" id="menu-manual-input"
+                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                role="menuitem">Manual Input</a>
+                            <a href="#" id="menu-csv-upload"
+                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                role="menuitem">CSV Upload</a>
+                            <a href="#" id="menu-static-data"
+                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                role="menuitem">Static measurements</a>
+                        </div>
+                    </div>
+                </div>
 
-<script>
-  function convert() {
-    const x = parseFloat(document.getElementById('x').value);
-    const y = parseFloat(document.getElementById('y').value);
+                <div class="text-center mb-6">
+                    <button id="my-points-btn"
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">
+                        My Points
+                    </button>
+                </div>
 
-    if (isNaN(x) || isNaN(y)) {
-      alert('אנא הכנס ערכים תקינים לשתי הקואורדינטות');
-      return;
-    }
+                <!-- Manual Input Interface -->
+                <div id="manual-input-interface" class="interface-section">
+                    <div class="mb-4">
+                        <label for="easting" class="block text-sm font-medium text-gray-700">Easting (ITM):</label>
+                        <input type="number" id="easting" placeholder="e.g., 180000"
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div class="mb-4">
+                        <label for="northing" class="block text-sm font-medium text-gray-700">Northing (ITM):</label>
+                        <input type="number" id="northing" placeholder="e.g., 600000"
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <button id="convert-btn"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300">
+                        Convert
+                    </button>
+                    <p id="error-message" class="text-red-600 text-sm mt-2 text-center"></p>
 
-    const fromProj = "+proj=tmerc +lat_0=31.73439361111111 +lon_0=35.20451694444445 +k=1.0000067 " +
-                     "+x_0=219529.584 +y_0=626907.39 +ellps=GRS80 +units=m +no_defs";
-    const toProj = "WGS84";
+                    <div class="mt-6">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-3">Converted WGS84 Coordinates:</h2>
+                        <div id="lat-result-box" class="result-box mt-4 p-4 rounded-lg shadow-inner flex-grow">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium text-gray-500">Latitude (WGS84):</span>
+                                <span id="latitude-result" class="result-value text-lg text-gray-900">-</span>
+                            </div>
+                        </div>
+                        <div id="lon-result-box" class="result-box mt-2 p-4 rounded-lg shadow-inner flex-grow">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium text-gray-500">Longitude (WGS84):</span>
+                                <span id="longitude-result" class="result-value text-lg text-gray-900">-</span>
+                            </div>
+                        </div>
 
-    const [lon, lat] = proj4(fromProj, toProj, [x, y]);
+                        <div id="manual-actions-container" class="flex justify-around mt-4 space-x-2">
+                        </div>
 
-    document.getElementById('result').textContent = `קו רוחב: ${lat.toFixed(6)}, קו אורך: ${lon.toFixed(6)}`;
+                        <div class="text-center mt-4">
+                            <button id="add-point-btn" class="w-full md:w-auto bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-purple-300" style="display: none;">
+                                Add Point to List
+                            </button>
+                        </div>
+                    </div>
+                </div>
 
-    const gmaps = `https://maps.google.com/?q=${lat},${lon}`;
-    const yandex = `https://yandex.com/maps/?ll=${lon},${lat}&z=16`;
+                <!-- CSV Upload Interface -->
+                <div id="csv-upload-interface" class="interface-section hidden">
+                    <div class="mb-4">
+                        <label for="csv-upload" class="block text-sm font-medium text-gray-700">Upload CSV File:</label>
+                        <input type="file" id="csv-upload" accept=".csv"
+                            class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                    </div>
 
-    document.getElementById('mapLinks').innerHTML = `
-      <a href="${gmaps}" target="_blank">פתח בגוגל מפות</a>
-      <a href="${yandex}" target="_blank">פתח ביאנדקס מפות</a>
-    `;
-  }
-</script>
+                    <div id="csv-column-selection" class="mb-4 space-y-4">
+                        <div>
+                            <label for="point-name-column" class="block text-sm font-medium text-gray-700">Select Point
+                                Name Column:</label>
+                            <select id="point-name-column"
+                                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                            </select>
+                        </div>
+                        <div>
+                            <label for="easting-column" class="block text-sm font-medium text-gray-700">Select Easting
+                                Column:</label>
+                            <select id="easting-column"
+                                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                            </select>
+                        </div>
+                        <div>
+                            <label for="northing-column" class="block text-sm font-medium text-gray-700">Select Northing
+                                Column:</label>
+                            <select id="northing-column"
+                                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                            </select>
+                        </div>
+                    </div>
 
+                    <button id="process-csv-btn"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300">
+                        Process CSV
+                    </button>
+                    <p id="csv-error-message" class="text-red-600 text-sm mt-2 text-center"></p>
+
+                    <div id="csv-results-section" class="mt-6" style="display: none;">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-3">CSV Conversion Results:</h2>
+                        <div class="csv-table-container">
+                            <table class="csv-table">
+                                <thead>
+                                    <tr>
+                                        <th>Point Name</th>
+                                        <th>Original Easting</th>
+                                        <th>Original Northing</th>
+                                        <th>Converted Latitude</th>
+                                        <th>Converted Longitude</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="csv-results-body">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Static Data Interface -->
+                <div id="static-data-interface" class="interface-section hidden">
+                    <h2 class="text-xl font-bold text-gray-800 mb-6 text-center">Static measurements</h2>
+
+                    <!-- Device Toggle -->
+                    <div class="flex justify-center mb-8">
+                        <legend class="px-2 text-sm font-semibold text-indigo-600 bg-white rounded">Choose receiver type
+                        </legend>
+                        <div class="bg-gray-200 p-1 rounded-lg inline-flex shadow-inner">
+                            <label class="device-toggle cursor-pointer">
+                                <input type="radio" name="device" value="topcon" class="hidden" checked>
+                                <div class="px-6 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900">
+                                    Topcon</div>
+                            </label>
+                            <label class="device-toggle cursor-pointer">
+                                <input type="radio" name="device" value="trimble" class="hidden">
+                                <div class="px-6 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900">
+                                    Trimble</div>
+                            </label>
+
+                        </div>
+                    </div>
+
+                    <fieldset class="border border-gray-300 rounded-lg p-5 mb-6 bg-white shadow-sm">
+                        <legend class="px-2 text-sm font-semibold text-indigo-600 bg-white rounded">Point Metadata
+                        </legend>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+							<input type="text" id="surveyor-name" placeholder="Surveyor Name"
+								class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 col-span-1 md:col-span-2">
+                            <input type="text" id="antenna-num" placeholder="Antenna Number" 
+								class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 col-span-1 md:col-span-2">
+							<input type="text" id="receiver-num" placeholder="Receiver #" 
+								class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 col-span-1 md:col-span-2">
+							<input type="text" id="point-name" placeholder="Point Name"
+								class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 col-span-1 md:col-span-2">
+							<input type="text" id="receiver-point" placeholder="Point Name in Receiver"
+                                class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 col-span-1 md:col-span-2">
+							<input type="text" id="measurement-num" placeholder="Maaraha #"
+								class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 col-span-1 md:col-span-2">
+                            <div>
+								<label for="measurement-date" class="block text-sm font-medium text-gray-700">Start Date:</label>
+								<input type="date" id="measurement-date"
+									class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+							</div>
+							<div>
+								<label for="start-time" class="block text-sm font-medium text-gray-700">Start Time:</label>
+								<input type="time" id="start-time"
+									class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+								<!-- <label for="end-time" class="block text-sm font-medium text-gray-700">End Time:</label>
+								//<input type="time" id="end-time" 
+									//class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+								-->
+							</div>
+                        </div>
+                    </fieldset>
+                    <!-- Height Frame -->
+                    <fieldset class="border border-gray-300 rounded-lg p-5 mb-6 bg-white shadow-sm">
+                        <legend class="px-2 text-sm font-semibold text-indigo-600 bg-white rounded">Height (measured)
+                        </legend>
+
+                        <!-- Antenna Inputs -->
+                        <div class="mb-5">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Antenna</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <input type="number" id="ant-height-1" step="0.001" placeholder="Measure 1 (in meters)"
+                                    class="block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <input type="number" id="ant-height-2" step="0.001" placeholder="Measure 2 (in meters)"
+                                    class="block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                        </div>
+
+                        <!-- Pahit Input -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Pahit</label>
+                            <input type="number" id="pahit-height" step="0.001" placeholder="Pahit Height (in meters)"
+                                class="block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+                    </fieldset>
+
+                    <!-- Action Button -->
+                    <div class="mt-6 text-center">
+                        <button type="button" id="calc-height-btn"
+                            class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-indigo-300">
+                            Calculate Height
+                        </button>
+                    </div>
+
+                    <!-- Height Results -->
+                    <fieldset class="border border-gray-300 rounded-lg p-5 mb-6 bg-white shadow-sm">
+                        <legend class="px-2 text-sm font-semibold text-indigo-600 bg-white rounded">Height (calculated)
+                        </legend>
+
+                        <div id="height-results" class="mt-6 hidden">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                                    <div class="text-xs text-blue-600 font-semibold uppercase tracking-wide">Antenna
+                                        (vertical)</div>
+                                    <div id="res-va" class="text-lg font-mono font-bold text-gray-800"></div>
+                                </div>
+                                <div class="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                                    <div class="text-xs text-blue-600 font-semibold uppercase tracking-wide">Pahit
+                                        (vertical)</div>
+                                    <div id="res-vp" class="text-lg font-mono font-bold text-gray-800"></div>
+                                </div>
+                                <div id="diff-box"
+                                    class="bg-gray-50 p-3 rounded-lg border border-gray-200 transition-colors duration-300">
+                                    <div class="text-xs text-gray-600 font-semibold uppercase tracking-wide">Difference
+                                    </div>
+                                    <div id="res-diff" class="text-lg font-mono font-bold text-gray-800"></div>
+                                </div>
+                                <div class="bg-green-50 p-3 rounded-lg border border-green-200">
+                                    <div class="text-xs text-green-600 font-semibold uppercase tracking-wide">Average
+                                        Height</div>
+                                    <div id="res-avg" class="text-lg font-mono font-bold text-green-800"></div>
+                                </div>
+                            </div>
+                            <p id="height-error" class="text-red-500 text-sm mt-2 text-center"></p>
+                        </div>
+                    </fieldset>
+                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
+						<h3 class="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">Measurement Stop</h3>
+						<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+							<div>
+								<label for="end-date" class="block text-sm font-medium text-gray-700">End Date:</label>
+								<input type="date" id="end-date"
+									class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+							</div>
+							<div>
+								<label for="end-time" class="block text-sm font-medium text-gray-700">End Time:</label>
+								<input type="time" id="end-time"
+									class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+							</div>
+						</div>
+					</div>
+
+					<div class="text-center mb-10">
+                        <button id="save-height-btn"
+                            class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition-transform transform hover:scale-105">
+                            Save
+                        </button>
+                        <p id="save-error" class="text-red-600 text-sm mt-2"></p>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div
+                class="md:w-1/2 p-4 md:p-6 bg-gray-50 border-t md:border-t-0 md:border-l border-gray-200 flex flex-col">
+                <div id="my-points-section" class="flex-grow hidden">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-4 text-center">My Points</h2>
+                    <div class="text-center mb-4">
+                        <div class="text-sm text-gray-600">
+                            My Location: <span id="my-lat">...</span>, <span id="my-lon">...</span>
+                        </div>
+                    </div>
+                    <div id="my-points-container" class="space-y-4">
+                    </div>
+                </div>
+
+                <div id="about-section" class="bg-gray-50 rounded-b-xl mt-auto">
+                    <h3 class="font-semibold text-gray-700">About the Coordinate Systems</h3>
+                    <p class="mt-2 text-sm text-gray-600">
+                        <strong>IG05 / IG12 (ITM):</strong> The Israeli Transverse Mercator (ITM) grid is the standard
+                        coordinate system for Israel, based on the GRS80 ellipsoid.
+                        <br><br>
+                        <strong>WGS84:</strong> The World Geodetic System 1984 is the global standard used by GPS
+                        systems for latitude and longitude coordinates. For most applications, WGS84 and GRS80 are
+                        functionally identical.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.10.0/proj4.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+    <script src="script.js"></script>
 </body>
+
 </html>

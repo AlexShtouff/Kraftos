@@ -1,0 +1,207 @@
+/* Custom styles for the application */
+body {
+    font-family: 'Inter', sans-serif;
+}
+.result-box {
+    background-color: #f0f9ff; /* light blue */
+    border-left: 4px solid #0ea5e9; /* sky-500 */
+}
+.result-box.success {
+    background-color: #f0fdf4; /* light green */
+    border-left-color: #22c55e; /* green-500 */
+}
+.result-box.success .text-sm {
+    color: #15803d; /* green-800 */
+}
+ .result-box.success .result-value {
+    color: #166534; /* green-900 */
+}
+.result-value {
+    font-family: monospace;
+    font-size: 1.125rem; /* text-lg */
+}
+
+/* --- MAP BUTTONS --- */
+.map-button, .map-button-csv {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    color: white;
+    font-weight: bold;
+    text-align: center;
+    text-decoration: none;
+    transition: transform 0.15s;
+}
+
+.map-button:hover, .map-button-csv:hover {
+    transform: scale(1.05);
+}
+
+/* For manual conversion section */
+.map-button:nth-of-type(1) {
+    background-color: #3b82f6; /* bg-blue-500 */
+}
+.map-button:nth-of-type(1):hover {
+    background-color: #2563eb; /* bg-blue-600 */
+}
+.map-button:nth-of-type(2) {
+    background-color: #22c55e; /* bg-green-500 */
+}
+.map-button:nth-of-type(2):hover {
+    background-color: #16a34a; /* bg-green-600 */
+}
+
+/* For CSV results table and My Points cards */
+.map-button-csv {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    margin: 0.125rem;
+}
+.map-button-csv.google {
+    background-color: #3b82f6; /* bg-blue-500 */
+}
+.map-button-csv.google:hover {
+     background-color: #2563eb; /* bg-blue-600 */
+}
+.map-button-csv.waze {
+    background-color: #22c55e; /* bg-green-500 */
+}
+.map-button-csv.waze:hover {
+    background-color: #16a34a; /* bg-green-600 */
+}
+/* --- END MAP BUTTONS --- */
+
+
+/* --- CSV Table --- */
+/* RWD Improvement: Scrollable table for small screens */
+.csv-table-container {
+    max-height: 400px; /* Increased height */
+    overflow-y: auto;
+    overflow-x: auto; /* Added horizontal scroll */
+    margin-top: 1.5rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+}
+.csv-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 600px; /* Ensures table does not squash too much */
+}
+.csv-table th, .csv-table td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 0.875rem; /* text-sm */
+}
+.csv-table th {
+    background-color: #f9fafb; /* bg-gray-50 */
+    font-weight: 600; /* font-semibold */
+    color: #374151; /* text-gray-700 */
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+.csv-table tbody tr:last-child td {
+    border-bottom: none;
+}
+.csv-table tbody tr.success {
+    background-color: #f0fdf4; /* light green */
+}
+
+.input-field {
+    padding: 0.5rem; border: 1px solid #d1d5db;
+    border-radius: 6px; width: 100%;
+    /* RWD: Font size 16px prevents iOS zooming on focus */
+    font-size: 16px;
+}
+
+/* --- My Points Card Layout --- */
+#my-points-container {
+    max-height: 500px;
+    overflow-y: auto;
+    padding-right: 0.5rem; /* Space for scrollbar */
+}
+
+.point-card {
+    border: 1px solid #d1d5db; /* gray-300 */
+    border-radius: 0.75rem; /* rounded-xl */
+    background-color: #ffffff;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+}
+
+.point-header {
+    background-color: #f9fafb; /* bg-gray-50 */
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #d1d5db;
+}
+
+.point-name {
+    font-size: 1.125rem; /* text-lg */
+    font-weight: 600; /* font-semibold */
+    color: #111827; /* text-gray-900 */
+}
+
+.point-body {
+    padding: 1rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Default to 2 columns for desktop */
+    gap: 0.75rem;
+}
+
+.point-detail {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #f9fafb; /* bg-gray-50 */
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem; /* rounded-md */
+}
+
+.point-detail-label {
+    font-size: 0.875rem; /* text-sm */
+    color: #4b5563; /* text-gray-600 */
+    font-weight: 500;
+}
+
+.point-detail-value {
+    font-size: 0.875rem; /* text-sm */
+    color: #1f2937; /* text-gray-800 */
+    font-family: monospace;
+}
+
+.point-distance {
+    grid-column: 1 / -1; /* Span full width */
+    text-align: center;
+    margin-top: 0.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #1d4ed8; /* blue-700 */
+}
+
+.point-actions {
+    grid-column: 1 / -1; /* Span full width */
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+/* --- NEW: Mobile Optimizations --- */
+@media (max-width: 767px) {
+    /* On mobile, change the point card's body to a single column */
+    .point-body {
+        grid-template-columns: 1fr;
+    }
+
+    /* Reduce font size of main title on mobile */
+    h1 {
+        font-size: 1.5rem; /* text-2xl */
+    }
+
+    /* Make map buttons in manual section a bit smaller on mobile */
+    .map-button {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+    }
+}

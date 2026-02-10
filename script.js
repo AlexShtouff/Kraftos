@@ -1,0 +1,954 @@
+/// --- DOM Elements ---
+const eastingInput = document.getElementById('easting');
+const northingInput = document.getElementById('northing');
+const convertBtn = document.getElementById('convert-btn');
+const latResult = document.getElementById('latitude-result');   // ✔ THIS EXISTS
+const lonResult = document.getElementById('longitude-result');  // ✔ THIS EXISTS
+const latResultBox = document.getElementById('lat-result-box');
+const lonResultBox = document.getElementById('lon-result-box');
+const errorMessage = document.getElementById('error-message');
+const manualActionsContainer = document.getElementById('manual-actions-container');
+const csvUploadInput = document.getElementById('csv-upload');
+const processCsvBtn = document.getElementById('process-csv-btn');
+const csvResultsSection = document.getElementById('csv-results-section');
+const csvResultsBody = document.getElementById('csv-results-body');
+const csvErrorMessage = document.getElementById('csv-error-message');
+const csvColumnSelection = document.getElementById('csv-column-selection');
+const pointNameColumnSelect = document.getElementById('point-name-column');
+const eastingColumnSelect = document.getElementById('easting-column');
+const northingColumnSelect = document.getElementById('northing-column');
+const myPointsSection = document.getElementById('my-points-section');
+const myPointsContainer = document.getElementById('my-points-container');
+const myPointsBtn = document.getElementById('my-points-btn');
+// Use the correct ID from HTML
+const savePointBtn = document.getElementById('save-point-btn');
+const myLatSpan = document.getElementById('my-lat');
+const myLonSpan = document.getElementById('my-lon');
+
+let csvFileContent = null;
+
+const addPointBtn = document.getElementById('add-point-btn');
+let lastConversion = null;
+
+let modeToggleButton;
+let modeDropdown;
+const menuManualInput = document.getElementById('menu-manual-input');
+const menuCsvUpload = document.getElementById('menu-csv-upload');
+
+const manualInputInterface = document.getElementById('manual-input-interface');
+const csvUploadInterface = document.getElementById('csv-upload-interface');
+// NEW VARIABLES
+const pahitHeightInput = document.getElementById('pahit-height');
+const antHeight1Input = document.getElementById('ant-height-1');
+const antHeight2Input = document.getElementById('ant-height-2');
+const calcHeightBtn = document.getElementById('calc-height-btn');
+const heightError = document.getElementById('height-error');
+const heightResults = document.getElementById('height-results');
+// NEW DOM elements for Point Metadata
+const pointNameInReceiver = document.getElementById('receiver-point');
+const antNum = document.getElementById('antenna-num');
+const receiverNum = document.getElementById('receiver-num');
+const pointNameInput = document.getElementById('point-name');
+const surveyorNameInput = document.getElementById('surveyor-name');
+const measurementNumInput = document.getElementById('measurement-num'); // NEW
+const measurementDateInput = document.getElementById('measurement-date'); // NEW
+const startTimeInput = document.getElementById('start-time'); // NEW
+const endTimeInput = document.getElementById('end-time'); // NEW
+const endDateInput = document.getElementById('end-date');
+const resVA = document.getElementById('res-va');
+const resVP = document.getElementById('res-vp');
+const resDiff = document.getElementById('res-diff');
+const resAvg = document.getElementById('res-avg');
+const diffBox = document.getElementById('diff-box');
+const saveHeightBtn = document.getElementById('save-height-btn'); 
+let calculatedResults = null;
+
+// --- Global Variables ---
+let currentMode = 'manual';
+let userLocation = null;
+let savedPoints = [];
+let csvData = [];
+let csvHeaders = [];
+let locationWatchId = null;
+
+// Define ITM projection (Israel Transverse Mercator - IG05/IG12)
+// Defined for proj4js
+const ITM_PROJ_DEF = '+proj=tmerc +lat_0=31.73439388888889 +lon_0=35.20451694444445 +k=1.0000067 +x_0=219521.4 +y_0=626907.39 +ellps=GRS80 +towgs84=-48,55,52,0,0,0,0 +units=m +no_defs';
+
+// --- Helper Functions ---
+/**
+ * Converts ITM coordinates (Easting, Northing) to WGS84 (Latitude, Longitude).
+ */
+function convertItmToWgs84(easting, northing) {
+    // --- GRS80 Ellipsoid Parameters ---
+	const a = 6378137; // Semi-major axis
+	const f = 1 / 298.257222101; // Inverse flattening
+	const e_sq = 2 * f - f ** 2; // Eccentricity squared
+	const e_prime_sq = e_sq / (1 - e_sq);
+	// --- ITM Projection Parameters ---
+	const lat0_rad = 31.7343936111111 * Math.PI / 180;
+	const lon0_rad = 35.2045169444444 * Math.PI / 180;
+	const k0 = 1.0000067;
+	const false_easting = 219529.584;
+	const false_northing = 626907.39;
+	const M0_coeff0 = 1 - e_sq / 4 - 3 * e_sq ** 2 / 64 - 5 * e_sq ** 3 / 256;
+	const M0_coeff2 = 3 * e_sq / 8 + 3 * e_sq ** 2 / 32 + 45 * e_sq ** 3 / 1024;
+	const M0_coeff4 = 15 * e_sq ** 2 / 256 + 45 * e_sq ** 3 / 1024;
+	const M0_coeff6 = 35 * e_sq ** 3 / 3072;
+
+	const M0 = a * (M0_coeff0 * lat0_rad - M0_coeff2 * Math.sin(2 * lat0_rad) + M0_coeff4 * Math.sin(4 * lat0_rad) - M0_coeff6 * Math.sin(6 * lat0_rad));
+
+ 	const M = M0 + (northing - false_northing) / k0;
+	const mu = M / (a * M0_coeff0);
+	const e1 = (1 - Math.sqrt(1 - e_sq)) / (1 + Math.sqrt(1 - e_sq));
+
+    const phi1_coeff2 = 3 * e1 / 2 - 27 * e1 ** 3 / 32;
+    const phi1_coeff4 = 21 * e1 ** 2 / 16 - 55 * e1 ** 4 / 32;
+    const phi1_coeff6 = 151 * e1 ** 3 / 96;
+    const phi1_coeff8 = 1097 * e1 ** 4 / 512;
+
+    const phi1 = mu + phi1_coeff2 * Math.sin(2 * mu) + phi1_coeff4 * Math.sin(4 * mu) + phi1_coeff6 * Math.sin(6 * mu) + phi1_coeff8 * Math.sin(8 * mu);
+
+    const C1 = e_prime_sq * Math.cos(phi1) ** 2;
+    const T1 = Math.tan(phi1) ** 2;
+	const N1 = a / Math.sqrt(1 - e_sq * Math.sin(phi1) ** 2);
+	const R1 = a * (1 - e_sq) / Math.pow(1 - e_sq * Math.sin(phi1) ** 2, 1.5);
+    const D = (easting - false_easting) / (N1 * k0);
+
+    const lat_rad_grs80 = phi1 - (N1 * Math.tan(phi1) / R1) * (D ** 2 / 2 - (5 + 3 * T1 + 10 * C1 - 4 * C1 ** 2 - 9 * e_prime_sq) * D ** 4 / 24 + (61 + 90 * T1 + 298 * C1 + 45 * T1 ** 2 - 252 * e_prime_sq - 3 * C1 ** 2) * D ** 6 / 720);
+    const lon_rad_grs80 = lon0_rad + (D - (1 + 2 * T1 + C1) * D ** 3 / 6 + (5 - 2 * C1 + 28 * T1 - 3 * C1 ** 2 + 8 * e_prime_sq + 24 * T1 ** 2) * D ** 5 / 120) / Math.cos(phi1);
+
+    const h_grs80 = 0;
+    const sinLat_grs80 = Math.sin(lat_rad_grs80);
+    const cosLat_grs80 = Math.cos(lat_rad_grs80);
+    const sinLon_grs80 = Math.sin(lon_rad_grs80);
+    const cosLon_grs80 = Math.cos(lon_rad_grs80);
+    const N_grs80 = a / Math.sqrt(1 - e_sq * sinLat_grs80 ** 2);
+    const X_grs80 = (N_grs80 + h_grs80) * cosLat_grs80 * cosLon_grs80;
+    const Y_grs80 = (N_grs80 + h_grs80) * cosLat_grs80 * sinLon_grs80;
+    const Z_grs80 = (N_grs80 * (1 - e_sq) + h_grs80) * sinLat_grs80;
+
+ 	const dX = -24.0024, dY = -17.1032, dZ = -17.8444;
+	const rX_arcsec = -0.33077, rY_arcsec = -1.85269, rZ_arcsec = 1.66969;
+	const s_ppm = 5.4262;
+
+	const toRadians = Math.PI / (180 * 3600);
+	const rX = rX_arcsec * toRadians, rY = rY_arcsec * toRadians, rZ = rZ_arcsec * toRadians;
+	const s_factor = s_ppm * 1e-6;
+
+	const X_wgs84 = dX + (1 + s_factor) * X_grs80 - rZ * Y_grs80 + rY * Z_grs80;
+	const Y_wgs84 = dY + rZ * X_grs80 + (1 + s_factor) * Y_grs80 - rX * Z_grs80;
+	const Z_wgs84 = dZ - rY * X_grs80 + rX * Y_grs80 + (1 + s_factor) * Z_grs80;
+
+	const a_wgs84 = 6378137, f_wgs84 = 1 / 298.257223563;
+	const e_sq_wgs84 = 2 * f_wgs84 - f_wgs84 ** 2;
+	const p = Math.sqrt(X_wgs84 ** 2 + Y_wgs84 ** 2);
+	let lon_rad_wgs84 = Math.atan2(Y_wgs84, X_wgs84);
+	let lat_rad_wgs84 = Math.atan2(Z_wgs84, p * (1 - e_sq_wgs84));
+
+	for (let i = 0; i < 10; i++) {
+		const lat_prev = lat_rad_wgs84;
+		const N_wgs84 = a_wgs84 / Math.sqrt(1 - e_sq_wgs84 * Math.sin(lat_prev) ** 2);
+		lat_rad_wgs84 = Math.atan2(Z_wgs84 + e_sq_wgs84 * N_wgs84 * Math.sin(lat_prev), p);
+		if (Math.abs(lat_rad_wgs84 - lat_prev) < 1e-12) break;
+	}
+
+    return {
+        latitude: lat_rad_wgs84 * 180 / Math.PI,
+        longitude: lon_rad_wgs84 * 180 / Math.PI,
+    };
+}
+
+/**
+ * Calculates the distance between two lat/lon points in kilometers using the Haversine formula.
+ */
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Radius of the Earth in km
+	const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+	
+	const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // Distance in km
+}
+
+function startUserLocationTracking() {
+    if (!navigator.geolocation) {
+        console.warn('Geolocation is not supported by this browser.');
+        return;
+    }
+
+    locationWatchId = navigator.geolocation.watchPosition(
+        (position) => {
+            userLocation = {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude
+            };
+
+            // Update UI
+            myLatSpan.textContent = userLocation.latitude.toFixed(6);
+            myLonSpan.textContent = userLocation.longitude.toFixed(6);
+
+            // Recalculate distances live
+            updateDistancesForSavedPoints();
+        },
+        (error) => {
+            console.error('Geolocation error:', error.message);
+        },
+        {
+            enableHighAccuracy: true,
+            maximumAge: 2000,
+            timeout: 10000
+        }
+    );
+}
+
+// --- Event Listener for the single convert button ---
+
+
+function getCsvHeaders(csvText) {
+    if (!csvText) return null;
+    const firstLine = csvText.split('\n')[0].trim();
+    return firstLine.replace(/^\uFEFF/, '').split(',').map(header => header.trim());
+}
+
+function populateColumnSelectors(headers) {
+    pointNameColumnSelect.innerHTML = '';
+    eastingColumnSelect.innerHTML = '';
+							  
+    northingColumnSelect.innerHTML = '';
+
+    const defaultOption = document.createElement('option');
+    defaultOption.value = '';
+    defaultOption.textContent = 'Choose a column...';
+    defaultOption.disabled = true;
+    defaultOption.selected = true;
+
+    pointNameColumnSelect.appendChild(defaultOption.cloneNode(true));
+    eastingColumnSelect.appendChild(defaultOption.cloneNode(true));
+    northingColumnSelect.appendChild(defaultOption.cloneNode(true));
+				  
+
+    headers.forEach(header => {
+        const option = document.createElement('option');
+        option.value = header;
+        option.textContent = header;
+        pointNameColumnSelect.appendChild(option.cloneNode(true));
+        eastingColumnSelect.appendChild(option.cloneNode(true));
+        northingColumnSelect.appendChild(option);	
+	});
+}
+
+// --- UI/Mode Management ---
+
+function showInterface(mode) {
+    currentMode = mode;
+    document.querySelectorAll('.interface-section').forEach(container => {
+        container.classList.add('hidden');
+    });
+
+    // Hide all error messages initially
+    errorMessage.classList.add('hidden');
+    csvErrorMessage.classList.add('hidden');
+
+    // Reset height calculator results/errors
+    heightResults.classList.add('hidden');
+    diffBox.classList.remove('bg-red-100');
+    heightError.textContent = '';
+
+    let title = '';
+
+    switch (mode) {
+        case 'manual':
+            document.getElementById('manual-input-interface').classList.remove('hidden');
+            title = 'Manual Input';
+            break;
+        case 'csv':
+            document.getElementById('csv-upload-interface').classList.remove('hidden');
+            title = 'CSV Upload';
+            break;
+        case 'static':
+            document.getElementById('static-data-interface').classList.remove('hidden');
+            title = 'Vertical Distance Calculator';
+            break;
+    }
+
+    // Update dropdown button text
+    const modeBtn = document.getElementById('options-menu');
+    if (modeBtn) {
+        // Keep the icon
+        const icon = modeBtn.querySelector('svg');
+        modeBtn.childNodes[0].textContent = title + ' ';
+        if (icon) modeBtn.appendChild(icon);
+    }
+    document.getElementById('mode-dropdown')?.classList.add('hidden');
+}
+
+function renderManualResults(result) {
+    const lat = result.latitude.toFixed(6);
+    const lon = result.longitude.toFixed(6);
+
+    // UPDATE CORRECT ELEMENTS
+    latResult.textContent = lat;
+    lonResult.textContent = lon;
+
+    // SAFETY – only if boxes exist
+    latResultBox?.classList.add('success');
+    lonResultBox?.classList.add('success');
+
+    const googleMapsUrl = `https://www.google.com/maps?q=${lat},${lon}`;
+    const wazeUrl = `https://www.waze.com/ul?ll=${lat},${lon}&navigate=yes`;
+
+    manualActionsContainer.innerHTML = `
+        <a href="${googleMapsUrl}" target="_blank" class="map-button">Google Maps</a>
+        <a href="${wazeUrl}" target="_blank" class="map-button">Waze</a>
+    `;
+    manualActionsContainer.style.display = 'flex';
+
+    addPointBtn.style.display = 'inline-block';
+}
+
+/**
+ * Renders the list of saved points in the right panel.
+ */
+function renderSavedPoints() {
+    myPointsContainer.innerHTML = '';
+
+    if (savedPoints.length === 0) {
+        myPointsContainer.innerHTML = '<p class="text-gray-500 text-center text-sm">No points saved yet. Save a point after conversion!</p>';
+        return;
+    }
+
+    savedPoints.forEach((point, index) => {
+      
+        const pointDiv = document.createElement('div');
+        pointDiv.className = 'bg-white rounded-lg shadow-md border border-gray-200';
+        pointDiv.innerHTML = `
+            <div class="point-header p-3 flex justify-between items-center border-b border-gray-200">
+                <span class="text-base font-semibold text-gray-800">${point.name || 'Point ' + (index + 1)}</span>
+                <button data-index="${index}" class="delete-point-btn text-red-500 hover:text-red-700 text-sm font-medium">Delete</button>
+            </div>
+            <div class="point-body">
+                <div class="point-detail">
+                    <span class="point-detail-label">ITM X:</span>
+                    <span class="point-detail-value">${point.easting.toFixed(2)}</span>
+                </div>
+                <div class="point-detail">
+                    <span class="point-detail-label">ITM Y:</span>
+                    <span class="point-detail-value">${point.northing.toFixed(2)}</span>
+                </div>
+                <div class="point-detail">
+                    <span class="point-detail-label">WGS84 Lat:</span>
+                    <span class="point-detail-value">${point.latitude.toFixed(6)}</span>
+                </div>
+                <div class="point-detail">
+                    <span class="point-detail-label">WGS84 Lon:</span>
+                    <span class="point-detail-value">${point.longitude.toFixed(6)}</span>
+                </div>
+                <div class="point-distance">
+					Distance to My Location:
+					<strong data-point-index="${index}">
+						${userLocation
+							? calculateDistance(
+								userLocation.latitude,
+								userLocation.longitude,
+								point.latitude,
+								point.longitude
+							  ).toFixed(3) + ' km'
+							: 'N/A'}
+					</strong>
+				</div>
+            </div>
+        `;
+        myPointsContainer.appendChild(pointDiv);
+    });
+
+    document.querySelectorAll('.delete-point-btn').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const indexToDelete = parseInt(e.target.dataset.index);
+            savedPoints.splice(indexToDelete, 1);
+            renderSavedPoints();
+        });
+    });
+}
+
+function updateDistancesForSavedPoints() {
+    if (!userLocation) return;
+
+    document.querySelectorAll('[data-point-index]').forEach(el => {
+        const index = parseInt(el.dataset.pointIndex);
+        const point = savedPoints[index];
+
+        if (!point) return;
+
+        const distKm = calculateDistance(
+            userLocation.latitude,
+            userLocation.longitude,
+            point.latitude,
+            point.longitude
+        );
+
+        el.textContent = `${distKm.toFixed(3)} km`;
+    });
+}
+
+
+// --- Event Handlers ---
+
+function handleManualConvert() {
+    errorMessage.classList.add('hidden');
+
+    const easting = parseFloat(eastingInput.value);
+    const northing = parseFloat(northingInput.value);
+
+    if (isNaN(easting) || isNaN(northing) || easting <= 0 || northing <= 0) {
+        errorMessage.textContent = 'Please enter valid, positive ITM Easting and Northing values.';
+        errorMessage.classList.remove('hidden');
+        renderManualResults(null);
+        return;
+    }
+
+    const wgs84 = convertItmToWgs84(easting, northing);
+    renderManualResults(wgs84);
+	
+	
+	lastConversion = {
+		easting,
+		northing,
+		latitude: wgs84.latitude,
+		longitude: wgs84.longitude
+	};
+	addPointBtn.style.display = 'inline-block';
+
+    if (!wgs84) {
+        errorMessage.textContent = 'Conversion failed. Check input values and projection definition.';
+        errorMessage.classList.remove('hidden');
+    }
+}
+
+function appendToMyPoints(pointName, easting, northing, latitude, longitude) {
+    const lat = latitude.toFixed(6);
+    const lon = longitude.toFixed(6);
+
+    let distanceText = 'Distance unavailable';
+    if (userLocation) {
+        const dist = calculateDistance(userLocation.latitude, userLocation.longitude, latitude, longitude);
+        distanceText = `Distance from my location: <strong>${dist.toFixed(2)} km</strong>`;
+    }
+
+    const gmapUrl = `https://www.google.com/maps?q=${lat},${lon}`;
+    const wazeUrl = `https://www.waze.com/ul?ll=${lat},${lon}&navigate=yes`;
+
+    const pointCardHTML = `
+        <div class="point-card">
+            <div class="point-header">
+                <h3 class="point-name">${pointName}</h3>
+            </div>
+            <div class="point-body">
+                <div class="point-detail"><span>Easting</span> ${easting}</div>
+                <div class="point-detail"><span>Northing</span> ${northing}</div>
+                <div class="point-detail"><span>Latitude</span> ${lat}</div>
+                <div class="point-detail"><span>Longitude</span> ${lon}</div>
+                <div class="point-distance">${distanceText}</div>
+                <div class="point-actions">
+                    <a href="${gmapUrl}" target="_blank" class="map-button-csv google">Google Maps</a>
+                    <a href="${wazeUrl}" target="_blank" class="map-button-csv waze">Waze</a>
+                </div>
+            </div>
+        </div>
+    `;
+
+    myPointsContainer.insertAdjacentHTML('beforeend', pointCardHTML);
+    myPointsSection.classList.remove('hidden');
+}
+
+function handleAddPoint() {
+    const easting = parseFloat(eastingInput.value);
+    const northing = parseFloat(northingInput.value);
+    const latitude = parseFloat(latResult.textContent);
+    const longitude = parseFloat(lonResult.textContent);
+
+    if (isNaN(easting) || isNaN(northing) || isNaN(latitude) || isNaN(longitude)) {
+        errorMessage.textContent = 'Cannot save point: Please perform a successful conversion first.';
+        errorMessage.classList.remove('hidden');
+        setTimeout(() => errorMessage.classList.add('hidden'), 3000);
+        return;
+    }
+
+    const pointName = prompt('Enter a name for this point (optional):');
+
+    savedPoints.push({
+        name: pointName || `Point ${savedPoints.length + 1}`,
+        easting,
+        northing,
+        latitude,
+        longitude
+    });
+
+    renderSavedPoints();
+    myPointsSection.classList.remove('hidden');
+    document.getElementById('about-section').classList.add('hidden');
+}
+
+addPointBtn.addEventListener('click', () => {
+	console.log("Add to List CLICKED — lastConversion:", lastConversion);
+
+    if (lastConversion) {
+        const pointName = prompt("Please enter a name for this point:", "Manual Point");
+
+        if (pointName) { // If user entered a name
+            const { easting, northing, latitude, longitude } = lastConversion;
+
+            // Append to My Points List
+            appendToMyPoints(pointName, easting, northing, latitude, longitude);
+
+            // Reset UI
+            eastingInput.value = '';
+            northingInput.value = '';
+            latResult.textContent = '-';
+            lonResult.textContent = '-';
+            latResultBox?.classList.remove('success');
+            lonResultBox?.classList.remove('success');
+            manualActionsContainer.style.display = 'none';
+            manualActionsContainer.innerHTML = '';
+            addPointBtn.style.display = 'none';
+            lastConversion = null;
+
+            // Open points section automatically
+            myPointsSection.classList.remove('hidden');
+        }
+    } else {
+        console.warn('No conversion data found. Make sure conversion was done first.');
+    }
+});
+
+
+// NEW EVENT LISTENER LOGIC
+if (calcHeightBtn) {
+    calcHeightBtn.addEventListener('click', () => {
+        // 1. Get Inputs and Reset State
+        const selectedDevice = document.querySelector('input[name="device"]:checked').value;
+        const h1 = parseFloat(antHeight1Input.value);
+        const h2 = parseFloat(antHeight2Input.value);
+        const pHeight = parseFloat(pahitHeightInput.value);
+        
+        heightError.textContent = '';
+        heightResults.classList.add('hidden');
+        diffBox.classList.remove('bg-red-100'); 
+        
+        if (saveHeightBtn) saveHeightBtn.disabled = true;
+
+        if (isNaN(h1) || isNaN(h2) || isNaN(pHeight)) {
+            heightError.textContent = 'Please enter all three height measurements.';
+            heightResults.classList.remove('hidden');
+            calculatedResults = null; // Clear old data
+            return;
+        }
+
+        // 2. Perform Calculation
+        let R_ant, O_ant;
+        if (selectedDevice === 'trimble') {
+            R_ant = 0.16981; O_ant = 0.04434;
+        } else if (selectedDevice === 'topcon') {
+            R_ant = 0.149; O_ant = 0.03;
+        } else {
+            R_ant = 0; O_ant = 0;
+        }
+        const R_pahit = 0.15;
+        const O_pahit = 0.0015;
+
+        const va_vert1 = Math.sqrt(h1 * h1 - R_ant * R_ant);
+        const va_vert2 = Math.sqrt(h2 * h2 - R_ant * R_ant);
+        const VA = (va_vert1 + va_vert2) / 2 - O_ant;
+        const VP = Math.sqrt(pHeight * pHeight - R_pahit * R_pahit) - O_pahit;
+        const diff = Math.abs(VA - VP);
+        const average = (VA + VP) / 2;
+
+        // 3. Update Display
+        if (diff >= 0.004) {
+            diffBox.classList.add('bg-red-100');
+        }
+        resVA.textContent = VA.toFixed(4) + ' m';
+        resVP.textContent = VP.toFixed(4) + ' m';
+        resDiff.textContent = diff.toFixed(4) + ' m';
+        resAvg.textContent = average.toFixed(4) + ' m';
+        heightResults.classList.remove('hidden');
+
+        // 4. Store ONLY the Calculated Results (Not the metadata yet)
+        calculatedResults = {
+            h1: h1,
+            h2: h2,
+            pHeight: pHeight,
+            VA: VA,
+            VP: VP,
+            average: average,
+            diff: diff
+        };
+        
+        // 5. Enable Save Button
+        if (saveHeightBtn) saveHeightBtn.disabled = false;
+    });
+}
+if (saveHeightBtn) {
+    saveHeightBtn.addEventListener('click', () => {
+        // --- 1. Validation: Ensure Calculations Exist ---
+        if (!calculatedResults) {
+            alert('No calculated data available. Please calculate height first.');
+            return;
+        }
+
+        // --- 2. Validation: Ensure Metadata is Filled ---
+        const surveyor = surveyorNameInput.value.trim();
+        const pointName = pointNameInput.value.trim();
+        const pointNameReceiver = pointNameInReceiver.value.trim();
+        
+        const startDate = measurementDateInput.value.trim();
+        const startTime = startTimeInput.value.trim();
+        
+        // NEW: Get Stop Data
+        const endDate = endDateInput ? endDateInput.value.trim() : '';
+        const endTime = endTimeInput.value.trim();
+
+        if (!surveyor || !pointName || !pointNameReceiver || !startDate || !startTime || !endDate || !endTime) {
+            alert('⚠ Please fill in all fields (Surveyor, Point Names, Dates, Start & End Times) before saving.');
+            return;
+        }
+
+        // --- 3. Build Data for Excel ---
+        const staticMeasurementData = [
+            // Metadata
+            { Key: "Receiver number", Value: receiverNum ? receiverNum.value : 'N/A' },
+            { Key: "Antenna number", Value: antNum ? antNum.value : 'N/A' },
+            { Key: "Surveyor", Value: surveyor },
+            { Key: "Measurement #", Value: measurementNumInput ? measurementNumInput.value : 'N/A' },
+            { Key: "Point Name", Value: pointName },
+            { Key: "Point Name in Receiver", Value: pointNameReceiver },
+            
+            // Time Data (Updated order)
+            { Key: "Start Date", Value: startDate },
+            { Key: "Start Time", Value: startTime },
+            { Key: "End Date", Value: endDate }, // 👈 Added to Excel
+            { Key: "End Time", Value: endTime },
+
+            // Raw Inputs (From stored calculations)
+            { Key: "Antenna Slant Height 1 (m)", Value: calculatedResults.h1.toFixed(4) },
+            { Key: "Antenna Slant Height 2 (m)", Value: calculatedResults.h2.toFixed(4) },
+            { Key: "Pahit Slant Height (m)", Value: calculatedResults.pHeight.toFixed(4) },
+
+            // Calculated Outputs
+            { Key: "Antenna Vertical Height (m)", Value: calculatedResults.VA.toFixed(4) },
+            { Key: "Pahit Vertical Height (m)", Value: calculatedResults.VP.toFixed(4) },
+            { Key: "Average Height (m)", Value: calculatedResults.average.toFixed(4) },
+            { Key: "Height Difference (m)", Value: calculatedResults.diff.toFixed(4) },
+        ];
+
+        // --- 4. Generate Excel ---
+        const filenamePoint = pointName || 'Point';
+        const filenameDate = startDate || 'Date';
+        const filenameTime = startTime.replace(/:/g, '-') || 'Time';
+
+        if (typeof XLSX !== 'undefined') {
+            const worksheet = XLSX.utils.json_to_sheet(staticMeasurementData);
+            
+            // Set column widths
+            worksheet['!cols'] = [{ wch: 25 }, { wch: 25 }]; 
+            
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Static Survey");
+            
+            const fileName = `Static_Measurement_${filenamePoint}_${filenameDate}_${filenameTime}.xlsx`;
+            XLSX.writeFile(workbook, fileName);
+            
+            // --- 5. Cleanup: Clear Fields After Save ---
+            pointNameInput.value = '';
+            pointNameInReceiver.value = '';
+            measurementNumInput.value = '';
+            
+            // Clear Dates and Times
+            measurementDateInput.value = '';
+            startTimeInput.value = '';
+            endDateInput.value = ''; // 👈 Clear new input
+            endTimeInput.value = '';
+
+            if (surveyorNameInput) surveyorNameInput.value = '';
+            if (antNum) antNum.value = '';
+            if (receiverNum) receiverNum.value = '';
+
+            // Clear Height Inputs
+            antHeight1Input.value = '';
+            antHeight2Input.value = '';
+            pahitHeightInput.value = '';
+
+            // Clear Results Display
+            resVA.textContent = '';
+            resVP.textContent = '';
+            resDiff.textContent = '';
+            resAvg.textContent = '';
+            heightResults.classList.add('hidden');
+            diffBox.classList.remove('bg-red-100');
+
+            // Reset Data State
+            calculatedResults = null;
+            saveHeightBtn.disabled = true;
+
+        } else {
+            alert("XLSX library not loaded. Cannot export to Excel.");
+        }
+    });
+}
+// --- CSV Handling ---
+
+function parseCsvFile(file) {
+    csvErrorMessage.classList.add('hidden');
+    csvColumnSelection.classList.add('hidden');
+    csvData = [];
+    csvHeaders = [];
+
+    Papa.parse(file, {
+        header: true,
+        dynamicTyping: true,
+        skipEmptyLines: true,
+        complete: function (results) {
+            if (results.data.length === 0) {
+                csvErrorMessage.textContent = 'CSV file is empty or headers are missing.';
+                csvErrorMessage.classList.remove('hidden');
+                processCsvBtn.disabled = true;
+                return;
+            }
+
+            csvData = results.data;
+            csvHeaders = results.meta.fields || Object.keys(csvData[0]);
+
+            [pointNameColumnSelect, eastingColumnSelect, northingColumnSelect].forEach(select => {
+                select.innerHTML = '';
+                if (select.id === 'point-name-column') {
+                    const defaultOption = document.createElement('option');
+                    defaultOption.value = '';
+                    defaultOption.textContent = '-- No Name Column --';
+                    select.appendChild(defaultOption);
+                }
+
+                csvHeaders.forEach(header => {
+                    const option = document.createElement('option');
+                    option.value = header;
+                    option.textContent = header;
+                    select.appendChild(option);
+                });
+            });
+
+            autoSelectCsvColumns();
+
+            csvColumnSelection.classList.remove('hidden');
+            processCsvBtn.disabled = false;
+        },
+        error: function (error) {
+            csvErrorMessage.textContent = `Error parsing CSV: ${error.message}`;
+            csvErrorMessage.classList.remove('hidden');
+            processCsvBtn.disabled = true;
+        }
+    });
+}
+
+function autoSelectCsvColumns() {
+    const headerMap = {
+        'easting': ['Easting', 'E', 'ITM_X', 'X'],
+        'northing': ['Northing', 'N', 'ITM_Y', 'Y'],
+        'pointName': ['Name', 'PointName', 'ID', 'PointID']
+    };
+
+    const findMatch = (target) => {
+        const matches = headerMap[target];
+        for (let header of csvHeaders) {
+            if (matches.includes(header.trim())) {
+                return header;
+            }
+        }
+        return '';
+    };
+
+    eastingColumnSelect.value = findMatch('easting');
+    northingColumnSelect.value = findMatch('northing');
+    pointNameColumnSelect.value = findMatch('pointName');
+}
+
+function processConvertedCsv() {
+    // Safety check: if elements are missing, stop to prevent crash
+    if (!csvErrorMessage || !csvResultsBody || !csvResultsSection) {
+        console.error("Missing CSV HTML elements");
+        return;
+    }
+	csvErrorMessage.classList.add('hidden');
+    csvResultsBody.innerHTML = '';
+    csvResultsSection.classList.add('hidden');
+
+    const eastingCol = eastingColumnSelect.value;
+    const northingCol = northingColumnSelect.value;
+    const nameCol = pointNameColumnSelect.value;
+
+    if (!eastingCol || !northingCol) {
+        csvErrorMessage.textContent = 'Please select both Easting and Northing columns.';
+        csvErrorMessage.classList.remove('hidden');
+        return;
+    }
+
+    const convertedPoints = csvData.map((row, index) => {
+        const easting = parseFloat(row[eastingCol]);
+        const northing = parseFloat(row[northingCol]);
+        const pointName = nameCol ? row[nameCol] : `Row ${index + 1}`;
+
+        let wgs84 = null;
+        let status = 'Success';
+
+        if (isNaN(easting) || isNaN(northing) || easting <= 0 || northing <= 0) {
+            status = 'Error: Invalid ITM values';
+        } else {
+            wgs84 = convertItmToWgs84(easting, northing);
+			appendToMyPoints(pointName, easting, northing, wgs84.latitude, wgs84.longitude);
+            if (!wgs84) status = 'Error: Conversion failed';
+        }
+
+        return {
+            name: pointName,
+            easting,
+            northing,
+            wgs84,
+            status
+        };
+    });
+
+    convertedPoints.forEach(point => {
+        const row = csvResultsBody.insertRow();
+        const statusClass = point.status === 'Success' ? 'text-green-600' : 'text-red-500';
+
+        let wgs84Text = point.status === 'Success' ?
+            `${point.wgs84.latitude.toFixed(6)}, ${point.wgs84.longitude.toFixed(6)}` :
+            `<span class="${statusClass}">${point.status}</span>`;
+
+        if (point.status === 'Success') {
+		const lat = point.wgs84.latitude.toFixed(6);
+		const lon = point.wgs84.longitude.toFixed(6);
+		const googleMapsUrl = `https://www.google.com/maps?q=${lat},${lon}`;
+		const wazeUrl = `https://www.waze.com/ul?ll=${lat},${lon}&navigate=yes`;
+
+		actionsHtml = `
+			<td>
+				<a href="${googleMapsUrl}" target="_blank" class="map-button-csv google">Maps</a>
+				<a href="${wazeUrl}" target="_blank" class="map-button-csv waze">Waze</a>
+			</td>
+		`;
+		}
+    });
+
+    document.querySelectorAll('.map-button-csv').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const lat = parseFloat(e.target.dataset.lat);
+            const lon = parseFloat(e.target.dataset.lon);
+            const msg = `Map feature simulated. Coordinates: Lat ${lat.toFixed(6)}, Lon ${lon.toFixed(6)}`;
+            alert(msg);
+        });
+    });
+
+    csvResultsSection.classList.remove('hidden');
+}
+
+// --- Initialization ---
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Event listeners
+    if (convertBtn) convertBtn.addEventListener('click', handleManualConvert);
+	
+	startUserLocationTracking();
+
+    // Use defensive check for savePointBtn and correct function
+    if (savePointBtn) savePointBtn.addEventListener('click', handleAddPoint);
+
+    // REMOVED heightCalculateBtn listener here as it is now handled above
+
+    if (myPointsBtn) {
+        myPointsBtn.addEventListener('click', () => {
+            const aboutSection = document.getElementById('about-section');
+            myPointsSection.classList.toggle('hidden');
+            aboutSection.classList.toggle('hidden');
+
+            if (!myPointsSection.classList.contains('hidden')) {
+                renderSavedPoints();
+                myPointsBtn.textContent = 'Hide Saved Points';
+            } else {
+                myPointsBtn.textContent = 'View Saved Points';
+            }
+        });
+    }
+
+    if (csvUploadInput) {
+        csvUploadInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                parseCsvFile(file);
+            }
+        });
+    }
+
+    if (processCsvBtn) processCsvBtn.addEventListener('click', processConvertedCsv);
+
+    // Mode switching logic
+    modeToggleButton = document.getElementById('options-menu');
+    modeDropdown = document.getElementById('mode-dropdown');
+    const menuManualInput = document.getElementById('menu-manual-input');
+    const menuCsvUpload = document.getElementById('menu-csv-upload');
+    const menuStaticData = document.getElementById('menu-static-data');
+
+    if (modeToggleButton && modeDropdown) {
+        modeToggleButton.addEventListener('click', () => {
+            modeDropdown.classList.toggle('hidden');
+        });
+    }
+
+    if (menuManualInput) {
+        menuManualInput.addEventListener('click', (event) => {
+            event.preventDefault();
+            showInterface('manual');
+        });
+    }
+
+    if (menuCsvUpload) {
+        menuCsvUpload.addEventListener('click', (event) => {
+            event.preventDefault();
+            showInterface('csv');
+        });
+    }
+
+    if (menuStaticData) {
+        menuStaticData.addEventListener('click', (event) => {
+            event.preventDefault();
+            showInterface('static');
+        });
+    }
+
+    window.addEventListener('click', function (e) {
+        if (modeDropdown && !modeToggleButton.contains(e.target) && !modeDropdown.contains(e.target)) {
+            modeDropdown.classList.add('hidden');
+        }
+    });
+
+    showInterface('manual');
+});
+
+// Get user's location
+navigator.geolocation?.getCurrentPosition(
+    position => {
+        userLocation = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+        };
+        myLatSpan.textContent = userLocation.latitude.toFixed(6);
+        myLonSpan.textContent = userLocation.longitude.toFixed(6);
+    },
+    error => {
+        myLatSpan.textContent = 'Unavailable';
+        myLonSpan.textContent = 'Unavailable';
+        console.warn('Geolocation error:', error.message);
+    }
+);
