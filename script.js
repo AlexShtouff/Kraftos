@@ -78,7 +78,7 @@ let deviceHeading = null;
 const ITM_PROJ_DEF = '+proj=tmerc +lat_0=31.73439388888889 +lon_0=35.20451694444445 +k=1.0000067 +x_0=219521.4 +y_0=626907.39 +ellps=GRS80 +towgs84=-48,55,52,0,0,0,0 +units=m +no_defs';
 
 function calculateMagneticDeclination(lat, lon) {
-    // Israel approximation based on latitude
+    //Israel approximation based on latitude
     // Southern Israel: ~3.2°
     // Central Israel (Tel Aviv area): ~3.5°
     // Northern Israel: ~3.8°
@@ -108,25 +108,28 @@ function startDeviceOrientationTracking() {
             // Add magnetic declination for Israel (approx 3.5°)
             let declination = 3.5;
             if (userLocation) {
+                // Use the provided calculation function based on user's current latitude
                 declination = calculateMagneticDeclination(userLocation.latitude, userLocation.longitude);
             }
             
             deviceHeading = (heading + declination + 360) % 360;
         
+            // Update the arrows pointing to saved locations
             updateDirectionArrows();
-            updateDebugDisplay();
+            
+            // Note: updateDebugDisplay() was removed as part of deleting debug functionality
         }
     };
 
-    // iOS requires permission for DeviceOrientation
+    // iOS requires explicit permission for DeviceOrientation
     if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-        // This should ideally be triggered by a button click to work on iOS
         DeviceOrientationEvent.requestPermission()
             .then(response => {
                 if (response === 'granted') {
                     window.addEventListener('deviceorientation', handleOrientation);
                 }
-            });
+            })
+            .catch(console.error);
     } else {
         window.addEventListener('deviceorientation', handleOrientation);
     }
@@ -387,14 +390,13 @@ function showInterface(mode) {
 }
 
 function renderManualResults(result) {
+    if (!result) return;
     const lat = result.latitude.toFixed(6);
     const lon = result.longitude.toFixed(6);
 
-    // UPDATE CORRECT ELEMENTS
     latResult.textContent = lat;
     lonResult.textContent = lon;
 
-    // SAFETY – only if boxes exist
     latResultBox?.classList.add('success');
     lonResultBox?.classList.add('success');
 
@@ -406,7 +408,6 @@ function renderManualResults(result) {
         <a href="${wazeUrl}" target="_blank" class="map-button">Waze</a>
     `;
     manualActionsContainer.style.display = 'flex';
-
     addPointBtn.style.display = 'inline-block';
 }
 
@@ -422,26 +423,28 @@ function renderSavedPoints() {
         pointDiv.className = 'point-card mb-4';
         
         let distDisplay = 'N/A';
-       const distKm = calculateDistance(userLocation.latitude, userLocation.longitude, point.latitude, point.longitude);
-		const distDisplay = distKm < 1 ? (distKm * 1000).toFixed(0) + ' m' : distKm.toFixed(3) + ' km';
+        if (userLocation) {
+            const distKm = calculateDistance(userLocation.latitude, userLocation.longitude, point.latitude, point.longitude);
+            distDisplay = distKm < 1 ? (distKm * 1000).toFixed(0) + ' m' : distKm.toFixed(3) + ' km';
+        }
 
-		pointDiv.innerHTML = `
-			<div class="point-header p-3 flex justify-between items-center border-b border-gray-200">
-				<span class="text-base font-semibold text-gray-800">${point.name || 'Point ' + (index + 1)}</span>
-				<button data-index="${index}" class="delete-point-btn text-red-500 text-sm">Delete</button>
-			</div>
-			<div class="point-body p-3">
-				<div class="text-xs text-gray-500"><strong>ITM:</strong> ${point.easting.toFixed(2)} / ${point.northing.toFixed(2)}</div>
-				<div class="text-xs text-gray-500 mb-2"><strong>WGS84:</strong> ${point.latitude.toFixed(6)}, ${point.longitude.toFixed(6)}</div>
-				
-				<div class="distance-row-container">
-					<span class="distance-text">
-						Dist: <strong data-point-index="${index}">${distDisplay}</strong>
-					</span>
-					<span class="direction-arrow" data-point-index="${index}">➔</span>
-				</div>
-			</div>
-		`;
+        pointDiv.innerHTML = `
+            <div class="point-header p-3 flex justify-between items-center border-b border-gray-200">
+                <span class="text-base font-semibold text-gray-800">${point.name || 'Point ' + (index + 1)}</span>
+                <button data-index="${index}" class="delete-point-btn text-red-500 text-sm">Delete</button>
+            </div>
+            <div class="point-body p-3">
+                <div class="text-xs text-gray-500"><strong>ITM:</strong> ${point.easting.toFixed(2)} / ${point.northing.toFixed(2)}</div>
+                <div class="text-xs text-gray-500 mb-2"><strong>WGS84:</strong> ${point.latitude.toFixed(6)}, ${point.longitude.toFixed(6)}</div>
+                
+                <div class="distance-row-container">
+                    <span class="distance-text">
+                        Dist: <strong data-point-index="${index}">${distDisplay}</strong>
+                    </span>
+                    <span class="direction-arrow" data-point-index="${index}">➔</span>
+                </div>
+            </div>
+        `;
         myPointsContainer.appendChild(pointDiv);
     });
 
@@ -995,9 +998,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Mode switching logic
     modeToggleButton = document.getElementById('options-menu');
     modeDropdown = document.getElementById('mode-dropdown');
-    const menuManualInput = document.getElementById('menu-manual-input');
-    const menuCsvUpload = document.getElementById('menu-csv-upload');
-    const menuStaticData = document.getElementById('menu-static-data');
+    menuManualInput = document.getElementById('menu-manual-input');
+    menuCsvUpload = document.getElementById('menu-csv-upload');
+    menuStaticData = document.getElementById('menu-static-data');
 
     if (modeToggleButton && modeDropdown) {
         modeToggleButton.addEventListener('click', () => {
