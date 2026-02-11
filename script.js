@@ -83,12 +83,22 @@ const ITM_PROJ_DEF = '+proj=tmerc +lat_0=31.73439388888889 +lon_0=35.20451694444
  
 function startDeviceOrientationTracking() {
     if (!window.DeviceOrientationEvent) {
-        console.warn('Device orientation not supported');
+        console.warn('Device orientation is not supported by this browser.');
         return;
     }
 
-    window.addEventListener('deviceorientationabsolute', handleOrientation, true);
-    window.addEventListener('deviceorientation', handleOrientation, true);
+    window.addEventListener('deviceorientation', (event) => {
+        const alpha = event.alpha; // rotation around z-axis
+        const beta = event.beta;   // rotation around x-axis
+        const gamma = event.gamma; // rotation around y-axis
+
+        // Calculate heading (compass direction): 0° = North, 90° = East, etc.
+        // This is a simplified calculation; adjust based on your needs
+        deviceHeading = (alpha + 360) % 360;
+
+        // Update direction arrows whenever orientation changes
+        updateDirectionArrows();
+    });
 }
 
 function handleOrientation(event) {
@@ -504,23 +514,42 @@ function appendToMyPoints(pointName, easting, northing, latitude, longitude) {
     let distanceText = 'Distance unavailable';
     if (userLocation) {
         const dist = calculateDistance(userLocation.latitude, userLocation.longitude, latitude, longitude);
-        distanceText = `Distance from my location: <strong>${dist.toFixed(2)} km</strong>`;
+        distanceText = `${dist.toFixed(3)} km`;
     }
 
     const gmapUrl = `https://www.google.com/maps?q=${lat},${lon}`;
     const wazeUrl = `https://www.waze.com/ul?ll=${lat},${lon}&navigate=yes`;
 
+    // Store the point in savedPoints FIRST
+    const pointIndex = savedPoints.length;
+    savedPoints.push({
+        name: pointName || `Point ${pointIndex + 1}`,
+        easting,
+        northing,
+        latitude,
+        longitude
+    });
+
     const pointCardHTML = `
         <div class="point-card">
-            <div class="point-header">
-                <h3 class="point-name">${pointName}</h3>
+            <div class="point-header p-3 flex justify-between items-center border-b border-gray-200">
+                <h3 class="point-name text-base font-semibold text-gray-800">${pointName}</h3>
+                <span class="direction-arrow" data-point-index="${pointIndex}" 
+                      style="display:inline-block; transform: rotate(0deg); font-size: 1.25rem;">
+                    ➤
+                </span>
             </div>
             <div class="point-body">
                 <div class="point-detail"><span>Easting</span> ${easting}</div>
                 <div class="point-detail"><span>Northing</span> ${northing}</div>
                 <div class="point-detail"><span>Latitude</span> ${lat}</div>
                 <div class="point-detail"><span>Longitude</span> ${lon}</div>
-                <div class="point-distance">${distanceText}</div>
+                <div class="point-distance">
+                    Distance to My Location:
+                    <strong data-point-index="${pointIndex}">
+                        ${distanceText}
+                    </strong>
+                </div>
                 <div class="point-actions">
                     <a href="${gmapUrl}" target="_blank" class="map-button-csv google">Google Maps</a>
                     <a href="${wazeUrl}" target="_blank" class="map-button-csv waze">Waze</a>
@@ -929,8 +958,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (convertBtn) convertBtn.addEventListener('click', handleManualConvert);
 	
 	startUserLocationTracking();
-	
-	startDeviceOrientationTracking();
+    startDeviceOrientationTracking();
 
     // Use defensive check for savePointBtn and correct function
     if (savePointBtn) savePointBtn.addEventListener('click', handleAddPoint);
@@ -1022,3 +1050,4 @@ navigator.geolocation?.getCurrentPosition(
         console.warn('Geolocation error:', error.message);
     }
 );
+
