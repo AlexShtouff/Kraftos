@@ -405,18 +405,18 @@ function renderSavedPoints() {
                             : 'N/A'}
                     </strong>
                 </div>
-                <div class="point-header p-3 flex justify-between items-center border-b border-gray-200">
-            //        <span class="text-base font-semibold text-gray-800">
-            //            ${point.name || 'Point ' + (index + 1)}
-            //        </span>
-                    <span
-                        class="direction-arrow"
-                        data-point-index="${index}"
-                        style="display:inline-block; transform: rotate(0deg); font-size: 1.25rem;"
-                    >
-                        ➤
-                    </span>
-                </div>
+            </div>
+            <div class="point-header p-3 flex justify-between items-center border-b border-gray-200">
+                <span class="text-base font-semibold text-gray-800">
+                    ${point.name || 'Point ' + (index + 1)}
+                </span>
+                <span
+                    class="direction-arrow"
+                    data-point-index="${index}"
+                    style="display:inline-block; transform: rotate(0deg); font-size: 1.25rem;"
+                >
+                    ➤
+                </span>
             </div>
         `;
         myPointsContainer.appendChild(pointDiv);
@@ -1082,6 +1082,7 @@ navigator.geolocation?.getCurrentPosition(
         console.warn('Geolocation error:', error.message);
     }
 );
+
 
 
 
