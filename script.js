@@ -414,66 +414,72 @@ function renderManualResults(result) {
 
 function renderSavedPoints() {
     myPointsContainer.innerHTML = '';
-
     if (savedPoints.length === 0) {
-        myPointsContainer.innerHTML = '<p class="text-gray-500 text-center text-sm">No points saved yet. Save a point after conversion!</p>';
+        myPointsContainer.innerHTML = '<p class="text-gray-500 text-center text-sm">No points saved yet.</p>';
         return;
     }
 
     savedPoints.forEach((point, index) => {
         const pointDiv = document.createElement('div');
-        pointDiv.className = 'bg-white rounded-lg shadow-md border border-gray-200 mb-4';
+        pointDiv.className = 'point-card mb-4';
         
-		// Calculate distance for initial render
         let distDisplay = 'N/A';
         if (userLocation) {
             const distKm = calculateDistance(userLocation.latitude, userLocation.longitude, point.latitude, point.longitude);
             distDisplay = distKm < 1 ? (distKm * 1000).toFixed(0) + ' m' : distKm.toFixed(3) + ' km';
         }
-		
-		pointDiv.innerHTML = `
-            <div class="point-header p-3 flex justify-between items-center border-b border-gray-200">
-                <span class="text-base font-semibold text-gray-800">${point.name || 'Point ' + (index + 1)}</span>
-                <button data-index="${index}" class="delete-point-btn text-red-500 hover:text-red-700 text-sm font-medium">Delete</button>
+
+        pointDiv.innerHTML = `
+            <div class="point-header flex justify-between items-center">
+                <span class="point-name">${point.name || 'Point ' + (index + 1)}</span>
+                <button data-index="${index}" class="delete-point-btn text-red-500 text-sm">Delete</button>
             </div>
-            <div class="point-body p-3 space-y-1">
-                <div class="text-xs text-gray-500">
-                    <strong>ITM:</strong> ${point.easting.toFixed(2)} / ${point.northing.toFixed(2)}
-                </div>
-                <div class="text-xs text-gray-500">
-                    <strong>WGS84:</strong> ${point.latitude.toFixed(6)}, ${point.longitude.toFixed(6)}
-                </div>
+            <div class="point-body p-3">
+                <div class="text-xs text-gray-500"><strong>ITM:</strong> ${point.easting.toFixed(2)} / ${point.northing.toFixed(2)}</div>
+                <div class="text-xs text-gray-500"><strong>WGS84:</strong> ${point.latitude.toFixed(6)}, ${point.longitude.toFixed(6)}</div>
                 
-                <div class="flex items-center justify-between bg-blue-50 p-2 rounded mt-2">
-                    <span class="text-sm font-bold text-blue-800">
+                <div class="distance-row-container mt-2">
+                    <div class="distance-text">
                         Dist: <strong data-point-index="${index}">${distDisplay}</strong>
-                    </span>
-                    <span class="direction-arrow text-xl" data-point-index="${index}" style="display:inline-block; transition: transform 0.2s ease-out;">➤</span>
+                    </div>
+                    <span class="direction-arrow" data-point-index="${index}">➤</span>
                 </div>
             </div>
         `;
         myPointsContainer.appendChild(pointDiv);
     });
 
-    document.querySelectorAll('.delete-point-btn').forEach(button => {
-        button.addEventListener('click', (e) => {
-            const indexToDelete = parseInt(e.target.dataset.index);
-            savedPoints.splice(indexToDelete, 1);
-            if (typeof saveToLocalStorage === "function") saveToLocalStorage();
+    document.querySelectorAll('.delete-point-btn').forEach(btn => {
+        btn.onclick = (e) => {
+            savedPoints.splice(parseInt(e.target.dataset.index), 1);
+            saveToLocalStorage();
             renderSavedPoints();
-        });
+        };
     });
 }
 
 function updateDistancesForSavedPoints() {
     if (!userLocation) return;
+
     document.querySelectorAll('strong[data-point-index]').forEach(el => {
         const index = parseInt(el.dataset.pointIndex);
         const point = savedPoints[index];
+
         if (!point) return;
 
-        const distKm = calculateDistance(userLocation.latitude, userLocation.longitude, point.latitude, point.longitude);
-        el.textContent = distKm < 1 ? (distKm * 1000).toFixed(0) + ' m' : distKm.toFixed(3) + ' km';
+        const distKm = calculateDistance(
+            userLocation.latitude,
+            userLocation.longitude,
+            point.latitude,
+            point.longitude
+        );
+
+        // Logic for meters vs kilometers
+        if (distKm < 1) {
+            el.textContent = `${(distKm * 1000).toFixed(0)} m`;
+        } else {
+            el.textContent = `${distKm.toFixed(3)} km`;
+        }
     });
 }
 
