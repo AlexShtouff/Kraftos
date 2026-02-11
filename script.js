@@ -434,7 +434,8 @@ function renderSavedPoints() {
 function updateDistancesForSavedPoints() {
     if (!userLocation) return;
 
-    document.querySelectorAll('[data-point-index]').forEach(el => {
+    // ✅ Only select <strong> elements with data-point-index (distance elements)
+    document.querySelectorAll('strong[data-point-index]').forEach(el => {
         const index = parseInt(el.dataset.pointIndex);
         const point = savedPoints[index];
 
@@ -454,7 +455,8 @@ function updateDistancesForSavedPoints() {
 function updateDirectionArrows() {
     if (!userLocation || deviceHeading === null) return;
 
-    document.querySelectorAll('.direction-arrow').forEach(el => {
+    // ✅ Only select <span> elements with class direction-arrow
+    document.querySelectorAll('span.direction-arrow').forEach(el => {
         const index = parseInt(el.dataset.pointIndex);
         const point = savedPoints[index];
         if (!point) return;
@@ -1082,6 +1084,7 @@ navigator.geolocation?.getCurrentPosition(
         console.warn('Geolocation error:', error.message);
     }
 );
+
 
 
 
