@@ -30,7 +30,7 @@ body {
     line-height: 1;
     text-align: center;
     transform-origin: center;
-    transition: transform 0.1s linear;
+    transition: transform 0.2s linear;
     will-change: transform;
     user-select: none;
     pointer-events: none;
@@ -219,4 +219,5 @@ body {
         font-size: 0.875rem;
     }
 }
+
 
