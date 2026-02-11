@@ -114,15 +114,15 @@ function startDeviceOrientationTracking() {
             );
         }
 
-        deviceHeading = (alpha + declination + 360) % 360;
+        // ✅ Try: 360 - alpha (reverse the heading)
+        deviceHeading = (360 - alpha + declination + 360) % 360;
         
-        // ✅ Store for display
         debugInfo.alpha = alpha.toFixed(1);
         debugInfo.deviceHeading = deviceHeading.toFixed(1);
         debugInfo.declination = declination;
 
         updateDirectionArrows();
-        updateDebugDisplay();  // ✅ Show on screen
+        updateDebugDisplay();
     });
 }
 
@@ -1144,6 +1144,7 @@ navigator.geolocation?.getCurrentPosition(
         console.warn('Geolocation error:', error.message);
     }
 );
+
 
 
 
