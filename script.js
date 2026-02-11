@@ -81,6 +81,19 @@ const ITM_PROJ_DEF = '+proj=tmerc +lat_0=31.73439388888889 +lon_0=35.20451694444
  * Converts ITM coordinates (Easting, Northing) to WGS84 (Latitude, Longitude).
  */
  
+// Add this function near your other helper functions
+function calculateMagneticDeclination(lat, lon) {
+    // Israel approximation based on latitude
+    // Southern Israel: ~3.2°
+    // Central Israel (Tel Aviv area): ~3.5°
+    // Northern Israel: ~3.8°
+    // Reference: https://www.ngdc.noaa.gov/geomag/calculators/magcalc.shtml
+    
+    if (lat > 33) return 3.8;   // Northern Israel
+    if (lat > 32) return 3.5;   // Central Israel
+    return 3.2;                 // Southern Israel
+}
+
 function startDeviceOrientationTracking() {
     if (!window.DeviceOrientationEvent) {
         console.warn('Device orientation is not supported by this browser.');
@@ -88,16 +101,49 @@ function startDeviceOrientationTracking() {
     }
 
     window.addEventListener('deviceorientation', (event) => {
-        const alpha = event.alpha; // rotation around z-axis
-        const beta = event.beta;   // rotation around x-axis
-        const gamma = event.gamma; // rotation around y-axis
+        if (event.alpha === null) return;
 
-        // Calculate heading (compass direction): 0° = North, 90° = East, etc.
-        // This is a simplified calculation; adjust based on your needs
-        deviceHeading = (alpha + 360) % 360;
+        const alpha = event.alpha; // Magnetic heading (0 = magnetic north)
+        let declination = 3.5; // default for central Israel
 
-        // Update direction arrows whenever orientation changes
+        // ✅ If user location is available, calculate precise declination
+        if (userLocation && userLocation.latitude && userLocation.longitude) {
+            declination = calculateMagneticDeclination(
+                userLocation.latitude,
+                userLocation.longitude
+            );
+        }
+
+        // ✅ Convert magnetic heading to true heading
+        // alpha (magnetic) + declination = true heading
+        deviceHeading = (alpha + declination + 360) % 360;
+
+        // Update direction arrows whenever device rotates
         updateDirectionArrows();
+    });
+}
+
+function updateDirectionArrows() {
+    if (!userLocation || deviceHeading === null) return;
+
+    document.querySelectorAll('span.direction-arrow').forEach(el => {
+        const index = parseInt(el.dataset.pointIndex);
+        const point = savedPoints[index];
+        if (!point) return;
+
+        // Calculate absolute bearing to the point
+        const bearing = calculateBearing(
+            userLocation.latitude,
+            userLocation.longitude,
+            point.latitude,
+            point.longitude
+        );
+
+        // ✅ Rotation = bearing to point - direction device is facing
+        // This shows where the point is relative to where user is looking
+        const rotation = (bearing - deviceHeading + 360) % 360;
+        
+        el.style.transform = `rotate(${rotation}deg)`;
     });
 }
 
@@ -449,27 +495,6 @@ function updateDistancesForSavedPoints() {
         );
 
         el.textContent = `${distKm.toFixed(3)} km`;
-    });
-}
-
-function updateDirectionArrows() {
-    if (!userLocation || deviceHeading === null) return;
-
-    // ✅ Only select <span> elements with class direction-arrow
-    document.querySelectorAll('span.direction-arrow').forEach(el => {
-        const index = parseInt(el.dataset.pointIndex);
-        const point = savedPoints[index];
-        if (!point) return;
-
-        const bearing = calculateBearing(
-            userLocation.latitude,
-            userLocation.longitude,
-            point.latitude,
-            point.longitude
-        );
-
-        const rotation = (bearing - deviceHeading + 360) % 360;
-        el.style.transform = `rotate(${rotation}deg)`;
     });
 }
 
@@ -1084,6 +1109,7 @@ navigator.geolocation?.getCurrentPosition(
         console.warn('Geolocation error:', error.message);
     }
 );
+
 
 
 
