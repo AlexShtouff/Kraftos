@@ -435,15 +435,14 @@ function renderSavedPoints() {
                 <button data-index="${index}" class="delete-point-btn text-red-500 text-sm">Delete</button>
             </div>
             <div class="point-body p-3">
-                <div class="text-xs text-gray-500"><strong>ITM:</strong> ${point.easting.toFixed(2)} / ${point.northing.toFixed(2)}</div>
-                <div class="text-xs text-gray-500"><strong>WGS84:</strong> ${point.latitude.toFixed(6)}, ${point.longitude.toFixed(6)}</div>
-                
-                <div class="distance-row-container mt-2">
-                    <div class="distance-text">
-                        Dist: <strong data-point-index="${index}">${distDisplay}</strong>
-                    </div>
-                    <span class="direction-arrow" data-point-index="${index}">➤</span>
-                </div>
+                <div class="text-xs text-gray-500"><strong>ITM: E/N</strong> ${point.easting.toFixed(2)} / ${point.northing.toFixed(2)}</div>
+                <div class="text-xs text-gray-500"><strong>WGS84: Lat, Long</strong> ${point.latitude.toFixed(6)}, ${point.longitude.toFixed(6)}</div>
+                <div class="distance-row-container">
+					<span class="distance-text">
+					Dist: <strong data-point-index="${index}">${distDisplay}</strong>
+					</span>
+					<span class="direction-arrow" data-point-index="${index}">➤</span>
+				</div>
             </div>
         `;
         myPointsContainer.appendChild(pointDiv);
