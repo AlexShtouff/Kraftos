@@ -76,12 +76,13 @@ let deviceHeading = null;
 // Defined for proj4js
 const ITM_PROJ_DEF = '+proj=tmerc +lat_0=31.73439388888889 +lon_0=35.20451694444445 +k=1.0000067 +x_0=219521.4 +y_0=626907.39 +ellps=GRS80 +towgs84=-48,55,52,0,0,0,0 +units=m +no_defs';
 
-// --- Helper Functions ---
-/**
- * Converts ITM coordinates (Easting, Northing) to WGS84 (Latitude, Longitude).
- */
+let debugInfo = {
+    alpha: 0,
+    deviceHeading: 0,
+    bearing: 0,
+    rotation: 0
+};
  
-// Add this function near your other helper functions
 function calculateMagneticDeclination(lat, lon) {
     // Israel approximation based on latitude
     // Southern Israel: ~3.2°
@@ -103,7 +104,7 @@ function startDeviceOrientationTracking() {
     window.addEventListener('deviceorientation', (event) => {
         if (event.alpha === null) return;
 
-        const alpha = event.alpha; // Magnetic heading
+        const alpha = event.alpha;
         let declination = 3.5;
 
         if (userLocation && userLocation.latitude && userLocation.longitude) {
@@ -114,13 +115,14 @@ function startDeviceOrientationTracking() {
         }
 
         deviceHeading = (alpha + declination + 360) % 360;
-
-        // 🔍 DEBUG: Log values to console
-        console.log('Alpha (magnetic):', alpha.toFixed(1), 
-                    '| Declination:', declination, 
-                    '| deviceHeading (true):', deviceHeading.toFixed(1));
+        
+        // ✅ Store for display
+        debugInfo.alpha = alpha.toFixed(1);
+        debugInfo.deviceHeading = deviceHeading.toFixed(1);
+        debugInfo.declination = declination;
 
         updateDirectionArrows();
+        updateDebugDisplay();  // ✅ Show on screen
     });
 }
 
@@ -141,11 +143,43 @@ function updateDirectionArrows() {
 
         const rotation = (bearing - deviceHeading + 360) % 360;
         
-        // 🔍 DEBUG: Log bearing and rotation
-        console.log(`Point ${index}: bearing=${bearing.toFixed(1)}°, deviceHeading=${deviceHeading.toFixed(1)}°, rotation=${rotation.toFixed(1)}°`);
+        // ✅ Store for display
+        debugInfo.bearing = bearing.toFixed(1);
+        debugInfo.rotation = rotation.toFixed(1);
         
         el.style.transform = `rotate(${rotation}deg)`;
     });
+}
+
+function updateDebugDisplay() {
+    // Create debug panel if it doesn't exist
+    let debugPanel = document.getElementById('debug-panel');
+    if (!debugPanel) {
+        debugPanel = document.createElement('div');
+        debugPanel.id = 'debug-panel';
+        debugPanel.style.cssText = `
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #0f0;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            z-index: 9999;
+            max-width: 200px;
+        `;
+        document.body.appendChild(debugPanel);
+    }
+    
+    debugPanel.innerHTML = `
+        <div><strong>Device Orientation Debug</strong></div>
+        <div>Alpha (mag): ${debugInfo.alpha}°</div>
+        <div>Device Head: ${debugInfo.deviceHeading}°</div>
+        <div>Bearing: ${debugInfo.bearing}°</div>
+        <div>Rotation: ${debugInfo.rotation}°</div>
+    `;
 }
 
 function handleOrientation(event) {
@@ -1110,6 +1144,7 @@ navigator.geolocation?.getCurrentPosition(
         console.warn('Geolocation error:', error.message);
     }
 );
+
 
 
 
