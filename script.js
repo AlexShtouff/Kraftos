@@ -103,10 +103,9 @@ function startDeviceOrientationTracking() {
     window.addEventListener('deviceorientation', (event) => {
         if (event.alpha === null) return;
 
-        const alpha = event.alpha; // Magnetic heading (0 = magnetic north)
-        let declination = 3.5; // default for central Israel
+        const alpha = event.alpha; // Magnetic heading
+        let declination = 3.5;
 
-        // ✅ If user location is available, calculate precise declination
         if (userLocation && userLocation.latitude && userLocation.longitude) {
             declination = calculateMagneticDeclination(
                 userLocation.latitude,
@@ -114,11 +113,13 @@ function startDeviceOrientationTracking() {
             );
         }
 
-        // ✅ Convert magnetic heading to true heading
-        // alpha (magnetic) + declination = true heading
         deviceHeading = (alpha + declination + 360) % 360;
 
-        // Update direction arrows whenever device rotates
+        // 🔍 DEBUG: Log values to console
+        console.log('Alpha (magnetic):', alpha.toFixed(1), 
+                    '| Declination:', declination, 
+                    '| deviceHeading (true):', deviceHeading.toFixed(1));
+
         updateDirectionArrows();
     });
 }
@@ -131,7 +132,6 @@ function updateDirectionArrows() {
         const point = savedPoints[index];
         if (!point) return;
 
-        // Calculate absolute bearing to the point
         const bearing = calculateBearing(
             userLocation.latitude,
             userLocation.longitude,
@@ -139,9 +139,10 @@ function updateDirectionArrows() {
             point.longitude
         );
 
-        // ✅ Rotation = bearing to point - direction device is facing
-        // This shows where the point is relative to where user is looking
         const rotation = (bearing - deviceHeading + 360) % 360;
+        
+        // 🔍 DEBUG: Log bearing and rotation
+        console.log(`Point ${index}: bearing=${bearing.toFixed(1)}°, deviceHeading=${deviceHeading.toFixed(1)}°, rotation=${rotation.toFixed(1)}°`);
         
         el.style.transform = `rotate(${rotation}deg)`;
     });
@@ -1109,6 +1110,7 @@ navigator.geolocation?.getCurrentPosition(
         console.warn('Geolocation error:', error.message);
     }
 );
+
 
 
 
