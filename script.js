@@ -114,10 +114,18 @@ function startDeviceOrientationTracking() {
             );
         }
 
-        // ✅ Try: 360 - alpha (reverse the heading)
-        deviceHeading = (360 - alpha + declination + 360) % 360;
+        // ✅ Test multiple formulas - we'll see which one changes as you rotate
+        const formula1 = (alpha + declination + 360) % 360;
+        const formula2 = (360 - alpha + declination + 360) % 360;
+        const formula3 = (360 - alpha + 360) % 360;
+        
+        // Use formula1 for now
+        deviceHeading = formula1;
         
         debugInfo.alpha = alpha.toFixed(1);
+        debugInfo.formula1 = formula1.toFixed(1);
+        debugInfo.formula2 = formula2.toFixed(1);
+        debugInfo.formula3 = formula3.toFixed(1);
         debugInfo.deviceHeading = deviceHeading.toFixed(1);
         debugInfo.declination = declination;
 
@@ -126,6 +134,47 @@ function startDeviceOrientationTracking() {
     });
 }
 
+function updateDebugDisplay() {
+    let debugPanel = document.getElementById('debug-panel');
+    if (!debugPanel) {
+        debugPanel = document.createElement('div');
+        debugPanel.id = 'debug-panel';
+        debugPanel.style.cssText = `
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #0f0;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 11px;
+            z-index: 9999;
+            max-width: 250px;
+        `;
+        document.body.appendChild(debugPanel);
+    }
+    
+    debugPanel.innerHTML = `
+        <div><strong>Device Orientation Debug</strong></div>
+        <div style="border-top: 1px #0f0 solid; margin-top: 5px; padding-top: 5px;">
+            <strong>Raw:</strong>
+        </div>
+        <div>Alpha: ${debugInfo.alpha}°</div>
+        <div style="border-top: 1px #0f0 solid; margin-top: 5px; padding-top: 5px;">
+            <strong>Formulas:</strong>
+        </div>
+        <div>F1 (α+d): ${debugInfo.formula1}°</div>
+        <div>F2 (360-α+d): ${debugInfo.formula2}°</div>
+        <div>F3 (360-α): ${debugInfo.formula3}°</div>
+        <div style="border-top: 1px #0f0 solid; margin-top: 5px; padding-top: 5px;">
+            <strong>Active:</strong>
+        </div>
+        <div>Device Head: ${debugInfo.deviceHeading}°</div>
+        <div>Bearing: ${debugInfo.bearing}°</div>
+        <div>Rotation: ${debugInfo.rotation}°</div>
+    `;
+}
 function updateDirectionArrows() {
     if (!userLocation || deviceHeading === null) return;
 
@@ -149,37 +198,6 @@ function updateDirectionArrows() {
         
         el.style.transform = `rotate(${rotation}deg)`;
     });
-}
-
-function updateDebugDisplay() {
-    // Create debug panel if it doesn't exist
-    let debugPanel = document.getElementById('debug-panel');
-    if (!debugPanel) {
-        debugPanel = document.createElement('div');
-        debugPanel.id = 'debug-panel';
-        debugPanel.style.cssText = `
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: rgba(0, 0, 0, 0.8);
-            color: #0f0;
-            padding: 10px;
-            border-radius: 5px;
-            font-family: monospace;
-            font-size: 12px;
-            z-index: 9999;
-            max-width: 200px;
-        `;
-        document.body.appendChild(debugPanel);
-    }
-    
-    debugPanel.innerHTML = `
-        <div><strong>Device Orientation Debug</strong></div>
-        <div>Alpha (mag): ${debugInfo.alpha}°</div>
-        <div>Device Head: ${debugInfo.deviceHeading}°</div>
-        <div>Bearing: ${debugInfo.bearing}°</div>
-        <div>Rotation: ${debugInfo.rotation}°</div>
-    `;
 }
 
 function handleOrientation(event) {
@@ -1144,6 +1162,7 @@ navigator.geolocation?.getCurrentPosition(
         console.warn('Geolocation error:', error.message);
     }
 );
+
 
 
 
