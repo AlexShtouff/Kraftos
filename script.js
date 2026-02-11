@@ -158,15 +158,6 @@ function updateDirectionArrows() {
     });
 }
 
-function handleOrientation(event) {
-    if (event.alpha === null) return;
-
-    // alpha = compass heading (0 = north)
-    deviceHeading = event.alpha;
-
-    updateDirectionArrows();
-}
- 
 function convertItmToWgs84(easting, northing) {
     // --- GRS80 Ellipsoid Parameters ---
 	const a = 6378137; // Semi-major axis
@@ -422,11 +413,12 @@ function renderSavedPoints() {
         const pointDiv = document.createElement('div');
         pointDiv.className = 'point-card mb-4';
         
-        let distDisplay = 'N/A';
-        if (userLocation) {
-            const distKm = calculateDistance(userLocation.latitude, userLocation.longitude, point.latitude, point.longitude);
-            distDisplay = distKm < 1 ? (distKm * 1000).toFixed(0) + ' m' : distKm.toFixed(3) + ' km';
-        }
+		let distDisplay = 'N/A';
+		if (userLocation) {
+			const distKm = calculateDistance(userLocation.latitude, userLocation.longitude, point.latitude, point.longitude);
+			// Use the variable already declared above, don't use 'const' here
+			distDisplay = distKm < 1 ? (distKm * 1000).toFixed(0) + ' m' : distKm.toFixed(3) + ' km';
+		}
 
         pointDiv.innerHTML = `
             <div class="point-header p-3 flex justify-between items-center border-b border-gray-200">
@@ -1053,15 +1045,3 @@ navigator.geolocation?.getCurrentPosition(
         myLonSpan.textContent = 'Unavailable';
         console.warn('Geolocation error:', error.message);
     }
-);
-
-
-
-
-
-
-
-
-
-
-
