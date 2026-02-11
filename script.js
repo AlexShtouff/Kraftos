@@ -96,42 +96,50 @@ function calculateMagneticDeclination(lat, lon) {
 }
 
 function startDeviceOrientationTracking() {
-    if (!window.DeviceOrientationEvent) {
-        console.warn('Device orientation is not supported by this browser.');
-        return;
-    }
+    if (!window.DeviceOrientationEvent) return;
 
-    window.addEventListener('deviceorientation', (event) => {
-        if (event.alpha === null) return;
+    const handleOrientation = (event) => {
+        let heading = null;
 
-        const alpha = event.alpha;
-        let declination = 3.5;
-
-        if (userLocation && userLocation.latitude && userLocation.longitude) {
-            declination = calculateMagneticDeclination(
-                userLocation.latitude,
-                userLocation.longitude
-            );
+        // Check for iOS-specific absolute heading
+        if (event.webkitCompassHeading) {
+            heading = event.webkitCompassHeading;
+        } else if (event.absolute === true || event.alpha !== null) {
+            // Android/Standard: alpha is 0 when pointing North, but increases counter-clockwise
+            // We convert it to clockwise degrees
+            heading = 360 - event.alpha;
         }
 
-        // ✅ Test multiple formulas - we'll see which one changes as you rotate
-        const formula1 = (alpha + declination + 360) % 360;
-        const formula2 = (360 - alpha + declination + 360) % 360;
-        const formula3 = (360 - alpha + 360) % 360;
-        
-        // Use formula1 for now
-        deviceHeading = formula1;
-        
-        debugInfo.alpha = alpha.toFixed(1);
-        debugInfo.formula1 = formula1.toFixed(1);
-        debugInfo.formula2 = formula2.toFixed(1);
-        debugInfo.formula3 = formula3.toFixed(1);
-        debugInfo.deviceHeading = deviceHeading.toFixed(1);
-        debugInfo.declination = declination;
+        if (heading !== null) {
+            // Add magnetic declination for Israel (approx 3.5°)
+            let declination = 3.5;
+            if (userLocation) {
+                declination = calculateMagneticDeclination(userLocation.latitude, userLocation.longitude);
+            }
+            
+            deviceHeading = (heading + declination + 360) % 360;
+            
+            // Debugging info
+            debugInfo.alpha = event.alpha ? event.alpha.toFixed(1) : 'N/A';
+            debugInfo.deviceHeading = deviceHeading.toFixed(1);
 
-        updateDirectionArrows();
-        updateDebugDisplay();
-    });
+            updateDirectionArrows();
+            updateDebugDisplay();
+        }
+    };
+
+    // iOS requires permission for DeviceOrientation
+    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+        // This should ideally be triggered by a button click to work on iOS
+        DeviceOrientationEvent.requestPermission()
+            .then(response => {
+                if (response === 'granted') {
+                    window.addEventListener('deviceorientation', handleOrientation);
+                }
+            });
+    } else {
+        window.addEventListener('deviceorientation', handleOrientation);
+    }
 }
 
 function updateDebugDisplay() {
@@ -190,12 +198,15 @@ function updateDirectionArrows() {
             point.longitude
         );
 
+        // Rotation is: Where the point is relative to North (bearing) 
+        // minus where the phone is pointing relative to North (deviceHeading)
         const rotation = (bearing - deviceHeading + 360) % 360;
         
-        // ✅ Store for display
         debugInfo.bearing = bearing.toFixed(1);
         debugInfo.rotation = rotation.toFixed(1);
         
+        // Use transform: rotate to point the arrow
+        el.style.display = 'inline-block';
         el.style.transform = `rotate(${rotation}deg)`;
     });
 }
@@ -1162,6 +1173,7 @@ navigator.geolocation?.getCurrentPosition(
         console.warn('Geolocation error:', error.message);
     }
 );
+
 
 
 
