@@ -70,6 +70,7 @@ let savedPoints = [];
 let csvData = [];
 let csvHeaders = [];
 let locationWatchId = null;
+let deviceHeading = null;
 
 // Define ITM projection (Israel Transverse Mercator - IG05/IG12)
 // Defined for proj4js
@@ -79,6 +80,26 @@ const ITM_PROJ_DEF = '+proj=tmerc +lat_0=31.73439388888889 +lon_0=35.20451694444
 /**
  * Converts ITM coordinates (Easting, Northing) to WGS84 (Latitude, Longitude).
  */
+ 
+function startDeviceOrientationTracking() {
+    if (!window.DeviceOrientationEvent) {
+        console.warn('Device orientation not supported');
+        return;
+    }
+
+    window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+    window.addEventListener('deviceorientation', handleOrientation, true);
+}
+
+function handleOrientation(event) {
+    if (event.alpha === null) return;
+
+    // alpha = compass heading (0 = north)
+    deviceHeading = event.alpha;
+
+    updateDirectionArrows();
+}
+ 
 function convertItmToWgs84(easting, northing) {
     // --- GRS80 Ellipsoid Parameters ---
 	const a = 6378137; // Semi-major axis
@@ -175,12 +196,25 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     return R * c; // Distance in km
 }
 
+function calculateBearing(lat1, lon1, lat2, lon2) {
+    const φ1 = lat1 * Math.PI / 180;
+    const φ2 = lat2 * Math.PI / 180;
+    const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+    const y = Math.sin(Δλ) * Math.cos(φ2);
+    const x =
+        Math.cos(φ1) * Math.sin(φ2) -
+        Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+
+    const θ = Math.atan2(y, x);
+    return (θ * 180 / Math.PI + 360) % 360;
+}
+
 function startUserLocationTracking() {
     if (!navigator.geolocation) {
         console.warn('Geolocation is not supported by this browser.');
         return;
     }
-
     locationWatchId = navigator.geolocation.watchPosition(
         (position) => {
             userLocation = {
@@ -191,9 +225,10 @@ function startUserLocationTracking() {
             // Update UI
             myLatSpan.textContent = userLocation.latitude.toFixed(6);
             myLonSpan.textContent = userLocation.longitude.toFixed(6);
-
+			
             // Recalculate distances live
             updateDistancesForSavedPoints();
+			updateDirectionArrows();
         },
         (error) => {
             console.error('Geolocation error:', error.message);
@@ -361,6 +396,20 @@ function renderSavedPoints() {
 							: 'N/A'}
 					</strong>
 				</div>
+				<div class="point-header p-3 flex justify-between items-center border-b border-gray-200">
+					<span class="text-base font-semibold text-gray-800">
+						${point.name || 'Point ' + (index + 1)}
+					</span>
+
+					<span
+						class="direction-arrow"
+						data-point-index="${index}"
+						style="display:inline-block; transform: rotate(0deg); font-size: 1.25rem;"
+					>
+						➤
+					</span>
+				</div>
+
             </div>
         `;
         myPointsContainer.appendChild(pointDiv);
@@ -395,6 +444,25 @@ function updateDistancesForSavedPoints() {
     });
 }
 
+function updateDirectionArrows() {
+    if (!userLocation || deviceHeading === null) return;
+
+    document.querySelectorAll('.direction-arrow').forEach(el => {
+        const index = parseInt(el.dataset.pointIndex);
+        const point = savedPoints[index];
+        if (!point) return;
+
+        const bearing = calculateBearing(
+            userLocation.latitude,
+            userLocation.longitude,
+            point.latitude,
+            point.longitude
+        );
+
+        const rotation = (bearing - deviceHeading + 360) % 360;
+        el.style.transform = `rotate(${rotation}deg)`;
+    });
+}
 
 // --- Event Handlers ---
 
@@ -861,6 +929,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (convertBtn) convertBtn.addEventListener('click', handleManualConvert);
 	
 	startUserLocationTracking();
+	
+	startDeviceOrientationTracking();
 
     // Use defensive check for savePointBtn and correct function
     if (savePointBtn) savePointBtn.addEventListener('click', handleAddPoint);
