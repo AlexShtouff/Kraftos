@@ -135,7 +135,7 @@ function startDeviceOrientationTracking() {
 function updateDirectionArrows() {
     if (!userLocation || deviceHeading === null) return;
 
-    document.querySelectorAll('span.direction-arrow').forEach(el => {
+    document.querySelectorAll('.direction-arrow').forEach(el => {
         const index = parseInt(el.dataset.pointIndex);
         const point = savedPoints[index];
         if (!point) return;
@@ -147,12 +147,10 @@ function updateDirectionArrows() {
             point.longitude
         );
 
-        // Rotation is: Where the point is relative to North (bearing) 
-        // minus where the phone is pointing relative to North (deviceHeading)
-        const rotation = (bearing - deviceHeading + 360) % 360;
+        // Subtract 90 because the symbol '➔' points right by default.
+        // This forces it to point Up (North) when bearing and heading are aligned.
+        const rotation = (bearing - deviceHeading + 360 - 90) % 360;
         
-        // Use transform: rotate to point the arrow
-        el.style.display = 'inline-block';
         el.style.transform = `rotate(${rotation}deg)`;
     });
 }
@@ -424,27 +422,26 @@ function renderSavedPoints() {
         pointDiv.className = 'point-card mb-4';
         
         let distDisplay = 'N/A';
-        if (userLocation) {
-            const distKm = calculateDistance(userLocation.latitude, userLocation.longitude, point.latitude, point.longitude);
-            distDisplay = distKm < 1 ? (distKm * 1000).toFixed(0) + ' m' : distKm.toFixed(3) + ' km';
-        }
+       const distKm = calculateDistance(userLocation.latitude, userLocation.longitude, point.latitude, point.longitude);
+		const distDisplay = distKm < 1 ? (distKm * 1000).toFixed(0) + ' m' : distKm.toFixed(3) + ' km';
 
-        pointDiv.innerHTML = `
-            <div class="point-header flex justify-between items-center">
-                <span class="point-name">${point.name || 'Point ' + (index + 1)}</span>
-                <button data-index="${index}" class="delete-point-btn text-red-500 text-sm">Delete</button>
-            </div>
-            <div class="point-body p-3">
-                <div class="text-xs text-gray-500"><strong>ITM: E/N</strong> ${point.easting.toFixed(2)} / ${point.northing.toFixed(2)}</div>
-                <div class="text-xs text-gray-500"><strong>WGS84: Lat, Long</strong> ${point.latitude.toFixed(6)}, ${point.longitude.toFixed(6)}</div>
-                <div class="distance-row-container">
+		pointDiv.innerHTML = `
+			<div class="point-header p-3 flex justify-between items-center border-b border-gray-200">
+				<span class="text-base font-semibold text-gray-800">${point.name || 'Point ' + (index + 1)}</span>
+				<button data-index="${index}" class="delete-point-btn text-red-500 text-sm">Delete</button>
+			</div>
+			<div class="point-body p-3">
+				<div class="text-xs text-gray-500"><strong>ITM:</strong> ${point.easting.toFixed(2)} / ${point.northing.toFixed(2)}</div>
+				<div class="text-xs text-gray-500 mb-2"><strong>WGS84:</strong> ${point.latitude.toFixed(6)}, ${point.longitude.toFixed(6)}</div>
+				
+				<div class="distance-row-container">
 					<span class="distance-text">
-					Dist: <strong data-point-index="${index}">${distDisplay}</strong>
+						Dist: <strong data-point-index="${index}">${distDisplay}</strong>
 					</span>
-					<span class="direction-arrow" data-point-index="${index}">➤</span>
+					<span class="direction-arrow" data-point-index="${index}">➔</span>
 				</div>
-            </div>
-        `;
+			</div>
+		`;
         myPointsContainer.appendChild(pointDiv);
     });
 
