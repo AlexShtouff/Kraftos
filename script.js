@@ -368,7 +368,6 @@ function renderSavedPoints() {
     }
 
     savedPoints.forEach((point, index) => {
-      
         const pointDiv = document.createElement('div');
         pointDiv.className = 'bg-white rounded-lg shadow-md border border-gray-200';
         pointDiv.innerHTML = `
@@ -394,32 +393,30 @@ function renderSavedPoints() {
                     <span class="point-detail-value">${point.longitude.toFixed(6)}</span>
                 </div>
                 <div class="point-distance">
-					Distance to My Location:
-					<strong data-point-index="${index}">
-						${userLocation
-							? calculateDistance(
-								userLocation.latitude,
-								userLocation.longitude,
-								point.latitude,
-								point.longitude
-							  ).toFixed(3) + ' km'
-							: 'N/A'}
-					</strong>
-				</div>
-				<div class="point-header p-3 flex justify-between items-center border-b border-gray-200">
-					<span class="text-base font-semibold text-gray-800">
-						${point.name || 'Point ' + (index + 1)}
-					</span>
-
-					<span
-						class="direction-arrow"
-						data-point-index="${index}"
-						style="display:inline-block; transform: rotate(0deg); font-size: 1.25rem;"
-					>
-						➤
-					</span>
-				</div>
-
+                    Distance to My Location:
+                    <strong data-point-index="${index}">
+                        ${userLocation
+                            ? calculateDistance(
+                                userLocation.latitude,
+                                userLocation.longitude,
+                                point.latitude,
+                                point.longitude
+                            ).toFixed(3) + ' km'
+                            : 'N/A'}
+                    </strong>
+                </div>
+                <div class="point-header p-3 flex justify-between items-center border-b border-gray-200">
+                    <span class="text-base font-semibold text-gray-800">
+                        ${point.name || 'Point ' + (index + 1)}
+                    </span>
+                    <span
+                        class="direction-arrow"
+                        data-point-index="${index}"
+                        style="display:inline-block; transform: rotate(0deg); font-size: 1.25rem;"
+                    >
+                        ➤
+                    </span>
+                </div>
             </div>
         `;
         myPointsContainer.appendChild(pointDiv);
@@ -507,60 +504,60 @@ function handleManualConvert() {
     }
 }
 
-function appendToMyPoints(pointName, easting, northing, latitude, longitude) {
-    const lat = latitude.toFixed(6);
-    const lon = longitude.toFixed(6);
+//function appendToMyPoints(pointName, easting, northing, latitude, longitude) {
+  //  const lat = latitude.toFixed(6);
+    //const lon = longitude.toFixed(6);
 
-    let distanceText = 'Distance unavailable';
-    if (userLocation) {
-        const dist = calculateDistance(userLocation.latitude, userLocation.longitude, latitude, longitude);
-        distanceText = `${dist.toFixed(3)} km`;
-    }
+   // let distanceText = 'Distance unavailable';
+   // if (userLocation) {
+     //   const dist = calculateDistance(userLocation.latitude, userLocation.longitude, latitude, longitude);
+       // distanceText = `${dist.toFixed(3)} km`;
+   // }
 
-    const gmapUrl = `https://www.google.com/maps?q=${lat},${lon}`;
-    const wazeUrl = `https://www.waze.com/ul?ll=${lat},${lon}&navigate=yes`;
+    //const gmapUrl = `https://www.google.com/maps?q=${lat},${lon}`;
+    //const wazeUrl = `https://www.waze.com/ul?ll=${lat},${lon}&navigate=yes`;
 
     // Store the point in savedPoints FIRST
-    const pointIndex = savedPoints.length;
-    savedPoints.push({
-        name: pointName || `Point ${pointIndex + 1}`,
-        easting,
-        northing,
-        latitude,
-        longitude
-    });
+    //const pointIndex = savedPoints.length;
+    //savedPoints.push({
+      //  name: pointName || `Point ${pointIndex + 1}`,
+        //easting,
+        //northing,
+        //latitude,
+        //longitude
+    //});
 
-    const pointCardHTML = `
-        <div class="point-card">
-            <div class="point-header p-3 flex justify-between items-center border-b border-gray-200">
-                <h3 class="point-name text-base font-semibold text-gray-800">${pointName}</h3>
-                <span class="direction-arrow" data-point-index="${pointIndex}" 
-                      style="display:inline-block; transform: rotate(0deg); font-size: 1.25rem;">
-                    ➤
-                </span>
-            </div>
-            <div class="point-body">
-                <div class="point-detail"><span>Easting</span> ${easting}</div>
-                <div class="point-detail"><span>Northing</span> ${northing}</div>
-                <div class="point-detail"><span>Latitude</span> ${lat}</div>
-                <div class="point-detail"><span>Longitude</span> ${lon}</div>
-                <div class="point-distance">
-                    Distance to My Location:
-                    <strong data-point-index="${pointIndex}">
-                        ${distanceText}
-                    </strong>
-                </div>
-                <div class="point-actions">
-                    <a href="${gmapUrl}" target="_blank" class="map-button-csv google">Google Maps</a>
-                    <a href="${wazeUrl}" target="_blank" class="map-button-csv waze">Waze</a>
-                </div>
-            </div>
-        </div>
-    `;
+    //const pointCardHTML = `
+      //  <div class="point-card">
+        //    <div class="point-header p-3 flex justify-between items-center border-b border-gray-200">
+          //      <h3 class="point-name text-base font-semibold text-gray-800">${pointName}</h3>
+            //    <span class="direction-arrow" data-point-index="${pointIndex}" 
+              //        style="display:inline-block; transform: rotate(0deg); font-size: 1.25rem;">
+                //    ➤
+                //</span>
+            //</div>
+            //<div class="point-body">
+              //  <div class="point-detail"><span>Easting</span> ${easting}</div>
+                //<div class="point-detail"><span>Northing</span> ${northing}</div>
+                //<div class="point-detail"><span>Latitude</span> ${lat}</div>
+                //<div class="point-detail"><span>Longitude</span> ${lon}</div>
+                //<div class="point-distance">
+                  //  Distance to My Location:
+                    //<strong data-point-index="${pointIndex}">
+                      //  ${distanceText}
+                    //</strong>
+                //</div>
+                //<div class="point-actions">
+                  //  <a href="${gmapUrl}" target="_blank" class="map-button-csv google">Google Maps</a>
+                    //<a href="${wazeUrl}" target="_blank" class="map-button-csv waze">Waze</a>
+               // </div>
+            //</div>
+        //</div>
+    //`;
 
-    myPointsContainer.insertAdjacentHTML('beforeend', pointCardHTML);
-    myPointsSection.classList.remove('hidden');
-}
+    //myPointsContainer.insertAdjacentHTML('beforeend', pointCardHTML);
+    //myPointsSection.classList.remove('hidden');
+//}
 
 function handleAddPoint() {
     const easting = parseFloat(eastingInput.value);
@@ -577,17 +574,29 @@ function handleAddPoint() {
 
     const pointName = prompt('Enter a name for this point (optional):');
 
-    savedPoints.push({
-        name: pointName || `Point ${savedPoints.length + 1}`,
-        easting,
-        northing,
-        latitude,
-        longitude
-    });
+    if (pointName !== null) {  // User didn't cancel the prompt
+        savedPoints.push({
+            name: pointName || `Point ${savedPoints.length + 1}`,
+            easting,
+            northing,
+            latitude,
+            longitude
+        });
 
-    renderSavedPoints();
-    myPointsSection.classList.remove('hidden');
-    document.getElementById('about-section').classList.add('hidden');
+        renderSavedPoints();  // ✅ Single function call to render everything
+        myPointsSection.classList.remove('hidden');
+        
+        // Reset UI
+        eastingInput.value = '';
+        northingInput.value = '';
+        latResult.textContent = '-';
+        lonResult.textContent = '-';
+        latResultBox?.classList.remove('success');
+        lonResultBox?.classList.remove('success');
+        manualActionsContainer.style.display = 'none';
+        manualActionsContainer.innerHTML = '';
+        addPointBtn.style.display = 'none';
+    }
 }
 
 addPointBtn.addEventListener('click', () => {
@@ -599,8 +608,16 @@ addPointBtn.addEventListener('click', () => {
         if (pointName) { // If user entered a name
             const { easting, northing, latitude, longitude } = lastConversion;
 
-            // Append to My Points List
-            appendToMyPoints(pointName, easting, northing, latitude, longitude);
+            // ✅ Replace appendToMyPoints with this:
+            savedPoints.push({
+                name: pointName,
+                easting,
+                northing,
+                latitude,
+                longitude
+            });
+
+            renderSavedPoints();  // ✅ Single function call
 
             // Reset UI
             eastingInput.value = '';
@@ -903,7 +920,18 @@ function processConvertedCsv() {
             status = 'Error: Invalid ITM values';
         } else {
             wgs84 = convertItmToWgs84(easting, northing);
-			appendToMyPoints(pointName, easting, northing, wgs84.latitude, wgs84.longitude);
+            
+            // ✅ Replace appendToMyPoints with this:
+            if (wgs84) {
+                savedPoints.push({
+                    name: pointName,
+                    easting,
+                    northing,
+                    latitude: wgs84.latitude,
+                    longitude: wgs84.longitude
+                });
+            }
+            
             if (!wgs84) status = 'Error: Conversion failed';
         }
 
@@ -916,6 +944,9 @@ function processConvertedCsv() {
         };
     });
 
+    // ✅ Render all points once after processing all CSV rows
+    renderSavedPoints();
+
     convertedPoints.forEach(point => {
         const row = csvResultsBody.insertRow();
         const statusClass = point.status === 'Success' ? 'text-green-600' : 'text-red-500';
@@ -925,18 +956,18 @@ function processConvertedCsv() {
             `<span class="${statusClass}">${point.status}</span>`;
 
         if (point.status === 'Success') {
-		const lat = point.wgs84.latitude.toFixed(6);
-		const lon = point.wgs84.longitude.toFixed(6);
-		const googleMapsUrl = `https://www.google.com/maps?q=${lat},${lon}`;
-		const wazeUrl = `https://www.waze.com/ul?ll=${lat},${lon}&navigate=yes`;
+            const lat = point.wgs84.latitude.toFixed(6);
+            const lon = point.wgs84.longitude.toFixed(6);
+            const googleMapsUrl = `https://www.google.com/maps?q=${lat},${lon}`;
+            const wazeUrl = `https://www.waze.com/ul?ll=${lat},${lon}&navigate=yes`;
 
-		actionsHtml = `
-			<td>
-				<a href="${googleMapsUrl}" target="_blank" class="map-button-csv google">Maps</a>
-				<a href="${wazeUrl}" target="_blank" class="map-button-csv waze">Waze</a>
-			</td>
-		`;
-		}
+            actionsHtml = `
+                <td>
+                    <a href="${googleMapsUrl}" target="_blank" class="map-button-csv google">Maps</a>
+                    <a href="${wazeUrl}" target="_blank" class="map-button-csv waze">Waze</a>
+                </td>
+            `;
+        }
     });
 
     document.querySelectorAll('.map-button-csv').forEach(button => {
@@ -949,6 +980,7 @@ function processConvertedCsv() {
     });
 
     csvResultsSection.classList.remove('hidden');
+    myPointsSection.classList.remove('hidden');  // ✅ Also show the points section
 }
 
 // --- Initialization ---
@@ -1050,4 +1082,5 @@ navigator.geolocation?.getCurrentPosition(
         console.warn('Geolocation error:', error.message);
     }
 );
+
 
