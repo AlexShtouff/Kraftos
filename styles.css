@@ -27,10 +27,11 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: #eff6ff;
-    padding: 0.5rem;
+    background-color: #eff6ff; /* light blue bg */
+    padding: 0.6rem 0.8rem;
     border-radius: 0.5rem;
     margin-top: 0.5rem;
+    border: 1px solid #dbeafe;
 }
 
 .distance-text {
@@ -42,7 +43,7 @@ body {
 /* Ensure arrow stays inline and visible */
 .direction-arrow {
     display: inline-block !important;
-    font-size: 1.5rem !important;
+    font-size: 2.75rem !important;
     color: #1e40af;
     transition: transform 0.2s ease-out;
 }
