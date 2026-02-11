@@ -22,19 +22,50 @@ body {
 }
 
 /* --- Direction Arrow --- */
+
+.distance-row-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #eff6ff;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.distance-text {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #1e40af;
+}
+
+/* Ensure arrow stays inline and visible */
 .direction-arrow {
     display: inline-block !important;
-    width: 1.25rem;
-    height: 1.25rem;
-    font-size: 1.25rem;
-    line-height: 1;
-    text-align: center;
-    transform-origin: center;
-    transition: transform 0.2s linear;
-    will-change: transform;
-    user-select: none;
-    pointer-events: none;
+    font-size: 1.5rem !important;
+    color: #1e40af;
+    transition: transform 0.2s ease-out;
 }
+
+/* Clean up coordinate text */
+.text-xs { font-size: 0.75rem; }
+.text-gray-500 { color: #6b7280; }
+.mt-2 { margin-top: 0.5rem; }
+
+/*.direction-arrow {
+//    display: inline-block !important;
+//    width: 1.25rem;
+//    height: 1.25rem;
+//    font-size: 1.25rem;
+//    line-height: 1;
+//    text-align: center;
+//    transform-origin: center;
+//    transition: transform 0.2s linear;
+//    will-change: transform;
+//    user-select: none;
+//    pointer-events: none;
+}*/
+
 /* --- MAP BUTTONS --- */
 .map-button, .map-button-csv {
     display: inline-block;
