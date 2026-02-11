@@ -1,3 +1,4 @@
+
 /// --- DOM Elements ---
 const eastingInput = document.getElementById('easting');
 const northingInput = document.getElementById('northing');
@@ -76,13 +77,6 @@ let deviceHeading = null;
 // Defined for proj4js
 const ITM_PROJ_DEF = '+proj=tmerc +lat_0=31.73439388888889 +lon_0=35.20451694444445 +k=1.0000067 +x_0=219521.4 +y_0=626907.39 +ellps=GRS80 +towgs84=-48,55,52,0,0,0,0 +units=m +no_defs';
 
-let debugInfo = {
-    alpha: 0,
-    deviceHeading: 0,
-    bearing: 0,
-    rotation: 0
-};
- 
 function calculateMagneticDeclination(lat, lon) {
     // Israel approximation based on latitude
     // Southern Israel: ~3.2°
@@ -118,11 +112,7 @@ function startDeviceOrientationTracking() {
             }
             
             deviceHeading = (heading + declination + 360) % 360;
-            
-            // Debugging info
-            debugInfo.alpha = event.alpha ? event.alpha.toFixed(1) : 'N/A';
-            debugInfo.deviceHeading = deviceHeading.toFixed(1);
-
+        
             updateDirectionArrows();
             updateDebugDisplay();
         }
@@ -142,47 +132,6 @@ function startDeviceOrientationTracking() {
     }
 }
 
-function updateDebugDisplay() {
-    let debugPanel = document.getElementById('debug-panel');
-    if (!debugPanel) {
-        debugPanel = document.createElement('div');
-        debugPanel.id = 'debug-panel';
-        debugPanel.style.cssText = `
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: rgba(0, 0, 0, 0.8);
-            color: #0f0;
-            padding: 10px;
-            border-radius: 5px;
-            font-family: monospace;
-            font-size: 11px;
-            z-index: 9999;
-            max-width: 250px;
-        `;
-        document.body.appendChild(debugPanel);
-    }
-    
-    debugPanel.innerHTML = `
-        <div><strong>Device Orientation Debug</strong></div>
-        <div style="border-top: 1px #0f0 solid; margin-top: 5px; padding-top: 5px;">
-            <strong>Raw:</strong>
-        </div>
-        <div>Alpha: ${debugInfo.alpha}°</div>
-        <div style="border-top: 1px #0f0 solid; margin-top: 5px; padding-top: 5px;">
-            <strong>Formulas:</strong>
-        </div>
-        <div>F1 (α+d): ${debugInfo.formula1}°</div>
-        <div>F2 (360-α+d): ${debugInfo.formula2}°</div>
-        <div>F3 (360-α): ${debugInfo.formula3}°</div>
-        <div style="border-top: 1px #0f0 solid; margin-top: 5px; padding-top: 5px;">
-            <strong>Active:</strong>
-        </div>
-        <div>Device Head: ${debugInfo.deviceHeading}°</div>
-        <div>Bearing: ${debugInfo.bearing}°</div>
-        <div>Rotation: ${debugInfo.rotation}°</div>
-    `;
-}
 function updateDirectionArrows() {
     if (!userLocation || deviceHeading === null) return;
 
@@ -201,9 +150,6 @@ function updateDirectionArrows() {
         // Rotation is: Where the point is relative to North (bearing) 
         // minus where the phone is pointing relative to North (deviceHeading)
         const rotation = (bearing - deviceHeading + 360) % 360;
-        
-        debugInfo.bearing = bearing.toFixed(1);
-        debugInfo.rotation = rotation.toFixed(1);
         
         // Use transform: rotate to point the arrow
         el.style.display = 'inline-block';
@@ -466,9 +412,6 @@ function renderManualResults(result) {
     addPointBtn.style.display = 'inline-block';
 }
 
-/**
- * Renders the list of saved points in the right panel.
- */
 function renderSavedPoints() {
     myPointsContainer.innerHTML = '';
 
@@ -479,54 +422,34 @@ function renderSavedPoints() {
 
     savedPoints.forEach((point, index) => {
         const pointDiv = document.createElement('div');
-        pointDiv.className = 'bg-white rounded-lg shadow-md border border-gray-200';
-        pointDiv.innerHTML = `
+        pointDiv.className = 'bg-white rounded-lg shadow-md border border-gray-200 mb-4';
+        
+		// Calculate distance for initial render
+        let distDisplay = 'N/A';
+        if (userLocation) {
+            const distKm = calculateDistance(userLocation.latitude, userLocation.longitude, point.latitude, point.longitude);
+            distDisplay = distKm < 1 ? (distKm * 1000).toFixed(0) + ' m' : distKm.toFixed(3) + ' km';
+        }
+		
+		pointDiv.innerHTML = `
             <div class="point-header p-3 flex justify-between items-center border-b border-gray-200">
                 <span class="text-base font-semibold text-gray-800">${point.name || 'Point ' + (index + 1)}</span>
                 <button data-index="${index}" class="delete-point-btn text-red-500 hover:text-red-700 text-sm font-medium">Delete</button>
             </div>
-            <div class="point-body">
-                <div class="point-detail">
-                    <span class="point-detail-label">ITM X:</span>
-                    <span class="point-detail-value">${point.easting.toFixed(2)}</span>
+            <div class="point-body p-3 space-y-1">
+                <div class="text-xs text-gray-500">
+                    <strong>ITM:</strong> ${point.easting.toFixed(2)} / ${point.northing.toFixed(2)}
                 </div>
-                <div class="point-detail">
-                    <span class="point-detail-label">ITM Y:</span>
-                    <span class="point-detail-value">${point.northing.toFixed(2)}</span>
+                <div class="text-xs text-gray-500">
+                    <strong>WGS84:</strong> ${point.latitude.toFixed(6)}, ${point.longitude.toFixed(6)}
                 </div>
-                <div class="point-detail">
-                    <span class="point-detail-label">WGS84 Lat:</span>
-                    <span class="point-detail-value">${point.latitude.toFixed(6)}</span>
+                
+                <div class="flex items-center justify-between bg-blue-50 p-2 rounded mt-2">
+                    <span class="text-sm font-bold text-blue-800">
+                        Dist: <strong data-point-index="${index}">${distDisplay}</strong>
+                    </span>
+                    <span class="direction-arrow text-xl" data-point-index="${index}" style="display:inline-block; transition: transform 0.2s ease-out;">➤</span>
                 </div>
-                <div class="point-detail">
-                    <span class="point-detail-label">WGS84 Lon:</span>
-                    <span class="point-detail-value">${point.longitude.toFixed(6)}</span>
-                </div>
-                <div class="point-distance">
-                    Distance to My Location:
-                    <strong data-point-index="${index}">
-                        ${userLocation
-                            ? calculateDistance(
-                                userLocation.latitude,
-                                userLocation.longitude,
-                                point.latitude,
-                                point.longitude
-                            ).toFixed(3) + ' km'
-                            : 'N/A'}
-                    </strong>
-                </div>
-            </div>
-            <div class="point-header p-3 flex justify-between items-center border-b border-gray-200">
-                <span class="text-base font-semibold text-gray-800">
-                    ${point.name || 'Point ' + (index + 1)}
-                </span>
-                <span
-                    class="direction-arrow"
-                    data-point-index="${index}"
-                    style="display:inline-block; transform: rotate(0deg); font-size: 1.25rem;"
-                >
-                    ➤
-                </span>
             </div>
         `;
         myPointsContainer.appendChild(pointDiv);
@@ -536,6 +459,7 @@ function renderSavedPoints() {
         button.addEventListener('click', (e) => {
             const indexToDelete = parseInt(e.target.dataset.index);
             savedPoints.splice(indexToDelete, 1);
+            if (typeof saveToLocalStorage === "function") saveToLocalStorage();
             renderSavedPoints();
         });
     });
@@ -543,25 +467,30 @@ function renderSavedPoints() {
 
 function updateDistancesForSavedPoints() {
     if (!userLocation) return;
-
-    // ✅ Only select <strong> elements with data-point-index (distance elements)
     document.querySelectorAll('strong[data-point-index]').forEach(el => {
         const index = parseInt(el.dataset.pointIndex);
         const point = savedPoints[index];
-
         if (!point) return;
 
-        const distKm = calculateDistance(
-            userLocation.latitude,
-            userLocation.longitude,
-            point.latitude,
-            point.longitude
-        );
-
-        el.textContent = `${distKm.toFixed(3)} km`;
+        const distKm = calculateDistance(userLocation.latitude, userLocation.longitude, point.latitude, point.longitude);
+        el.textContent = distKm < 1 ? (distKm * 1000).toFixed(0) + ' m' : distKm.toFixed(3) + ' km';
     });
 }
 
+function saveToLocalStorage() {
+    localStorage.setItem('itm_saved_points', JSON.stringify(savedPoints));
+}
+
+function loadFromLocalStorage() {
+    const data = localStorage.getItem('itm_saved_points');
+    if (data) {
+        savedPoints = JSON.parse(data);
+        if (savedPoints.length > 0) {
+            myPointsSection.classList.remove('hidden');
+            renderSavedPoints();
+        }
+    }
+}
 // --- Event Handlers ---
 
 function handleManualConvert() {
@@ -595,61 +524,6 @@ function handleManualConvert() {
     }
 }
 
-//function appendToMyPoints(pointName, easting, northing, latitude, longitude) {
-  //  const lat = latitude.toFixed(6);
-    //const lon = longitude.toFixed(6);
-
-   // let distanceText = 'Distance unavailable';
-   // if (userLocation) {
-     //   const dist = calculateDistance(userLocation.latitude, userLocation.longitude, latitude, longitude);
-       // distanceText = `${dist.toFixed(3)} km`;
-   // }
-
-    //const gmapUrl = `https://www.google.com/maps?q=${lat},${lon}`;
-    //const wazeUrl = `https://www.waze.com/ul?ll=${lat},${lon}&navigate=yes`;
-
-    // Store the point in savedPoints FIRST
-    //const pointIndex = savedPoints.length;
-    //savedPoints.push({
-      //  name: pointName || `Point ${pointIndex + 1}`,
-        //easting,
-        //northing,
-        //latitude,
-        //longitude
-    //});
-
-    //const pointCardHTML = `
-      //  <div class="point-card">
-        //    <div class="point-header p-3 flex justify-between items-center border-b border-gray-200">
-          //      <h3 class="point-name text-base font-semibold text-gray-800">${pointName}</h3>
-            //    <span class="direction-arrow" data-point-index="${pointIndex}" 
-              //        style="display:inline-block; transform: rotate(0deg); font-size: 1.25rem;">
-                //    ➤
-                //</span>
-            //</div>
-            //<div class="point-body">
-              //  <div class="point-detail"><span>Easting</span> ${easting}</div>
-                //<div class="point-detail"><span>Northing</span> ${northing}</div>
-                //<div class="point-detail"><span>Latitude</span> ${lat}</div>
-                //<div class="point-detail"><span>Longitude</span> ${lon}</div>
-                //<div class="point-distance">
-                  //  Distance to My Location:
-                    //<strong data-point-index="${pointIndex}">
-                      //  ${distanceText}
-                    //</strong>
-                //</div>
-                //<div class="point-actions">
-                  //  <a href="${gmapUrl}" target="_blank" class="map-button-csv google">Google Maps</a>
-                    //<a href="${wazeUrl}" target="_blank" class="map-button-csv waze">Waze</a>
-               // </div>
-            //</div>
-        //</div>
-    //`;
-
-    //myPointsContainer.insertAdjacentHTML('beforeend', pointCardHTML);
-    //myPointsSection.classList.remove('hidden');
-//}
-
 function handleAddPoint() {
     const easting = parseFloat(eastingInput.value);
     const northing = parseFloat(northingInput.value);
@@ -673,7 +547,7 @@ function handleAddPoint() {
             latitude,
             longitude
         });
-
+		saveToLocalStorage();
         renderSavedPoints();  // ✅ Single function call to render everything
         myPointsSection.classList.remove('hidden');
         
@@ -707,7 +581,7 @@ addPointBtn.addEventListener('click', () => {
                 latitude,
                 longitude
             });
-
+			saveToLocalStorage();
             renderSavedPoints();  // ✅ Single function call
 
             // Reset UI
@@ -1012,7 +886,6 @@ function processConvertedCsv() {
         } else {
             wgs84 = convertItmToWgs84(easting, northing);
             
-            // ✅ Replace appendToMyPoints with this:
             if (wgs84) {
                 savedPoints.push({
                     name: pointName,
@@ -1078,6 +951,9 @@ function processConvertedCsv() {
 
 document.addEventListener('DOMContentLoaded', () => {
     // Event listeners
+	
+	loadFromLocalStorage(); 
+	
     if (convertBtn) convertBtn.addEventListener('click', handleManualConvert);
 	
 	startUserLocationTracking();
