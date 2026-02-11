@@ -27,11 +27,11 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: #eff6ff; /* light blue bg */
-    padding: 0.6rem 0.8rem;
+    background-color: #eff6ff;
+    padding: 0.75rem 1rem; /* More padding for the bigger arrow */
     border-radius: 0.5rem;
     margin-top: 0.5rem;
-    border: 1px solid #dbeafe;
+    min-height: 3.5rem; /* Ensures height is consistent */
 }
 
 .distance-text {
@@ -43,9 +43,16 @@ body {
 /* Ensure arrow stays inline and visible */
 .direction-arrow {
     display: inline-block !important;
-    font-size: 2.75rem !important;
-    color: #1e40af;
-    transition: transform 0.2s ease-out;
+    font-size: 2.5rem !important; /* This makes it significantly larger */
+    line-height: 1;
+    text-align: center;
+    transform-origin: center;
+    transition: transform 0.2s linear;
+    will-change: transform;
+    user-select: none;
+    pointer-events: none;
+    color: #1d4ed8; /* Strong blue color */
+    margin-left: 10px; /* Space between distance and arrow */
 }
 
 /* Clean up coordinate text */
