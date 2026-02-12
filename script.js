@@ -946,82 +946,49 @@ function processConvertedCsv() {
 
 // --- Initialization ---
 
+// ... (Your conversion functions remain the same) ...
+
 document.addEventListener('DOMContentLoaded', () => {
-    // Event listeners
+    // 1. Initialize Elements inside the listener to ensure they exist
+    const convertBtn = document.getElementById('convert-btn');
+    const savePointBtn = document.getElementById('save-point-btn');
+    const modeToggleButton = document.getElementById('options-menu');
+    const modeDropdown = document.getElementById('mode-dropdown');
+    
+    // 2. Load data
+    loadFromLocalStorage(); 
 	
-	loadFromLocalStorage(); 
-	
+    // 3. Set up listeners
     if (convertBtn) convertBtn.addEventListener('click', handleManualConvert);
-	
-	startUserLocationTracking();
+    if (savePointBtn) savePointBtn.addEventListener('click', handleAddPoint);
+    
+    startUserLocationTracking();
     startDeviceOrientationTracking();
 
-    // Use defensive check for savePointBtn and correct function
-    if (savePointBtn) savePointBtn.addEventListener('click', handleAddPoint);
-
-    // REMOVED heightCalculateBtn listener here as it is now handled above
-
-    if (myPointsBtn) {
-        myPointsBtn.addEventListener('click', () => {
-            const aboutSection = document.getElementById('about-section');
-            myPointsSection.classList.toggle('hidden');
-            aboutSection.classList.toggle('hidden');
-
-            if (!myPointsSection.classList.contains('hidden')) {
-                renderSavedPoints();
-                myPointsBtn.textContent = 'Hide Saved Points';
-            } else {
-                myPointsBtn.textContent = 'View Saved Points';
-            }
-        });
-    }
-
-    if (csvUploadInput) {
-        csvUploadInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                parseCsvFile(file);
-            }
-        });
-    }
-
-    if (processCsvBtn) processCsvBtn.addEventListener('click', processConvertedCsv);
-
-    // Mode switching logic
-    modeToggleButton = document.getElementById('options-menu');
-    modeDropdown = document.getElementById('mode-dropdown');
-    menuManualInput = document.getElementById('menu-manual-input');
-    menuCsvUpload = document.getElementById('menu-csv-upload');
-    menuStaticData = document.getElementById('menu-static-data');
-
+    // Mode switching
     if (modeToggleButton && modeDropdown) {
         modeToggleButton.addEventListener('click', () => {
             modeDropdown.classList.toggle('hidden');
         });
     }
 
-    if (menuManualInput) {
-        menuManualInput.addEventListener('click', (event) => {
-            event.preventDefault();
-            showInterface('manual');
-        });
-    }
+    // Use IDs directly instead of re-assigning const variables
+    document.getElementById('menu-manual-input')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        showInterface('manual');
+    });
 
-    if (menuCsvUpload) {
-        menuCsvUpload.addEventListener('click', (event) => {
-            event.preventDefault();
-            showInterface('csv');
-        });
-    }
+    document.getElementById('menu-csv-upload')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        showInterface('csv');
+    });
 
-    if (menuStaticData) {
-        menuStaticData.addEventListener('click', (event) => {
-            event.preventDefault();
-            showInterface('static');
-        });
-    }
+    document.getElementById('menu-static-data')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        showInterface('static');
+    });
 
-    window.addEventListener('click', function (e) {
+    window.addEventListener('click', (e) => {
         if (modeDropdown && !modeToggleButton.contains(e.target) && !modeDropdown.contains(e.target)) {
             modeDropdown.classList.add('hidden');
         }
@@ -1029,6 +996,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     showInterface('manual');
 });
+
+// 4. Corrected Geolocation block
+if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+        position => {
+            userLocation = {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude
+            };
+            if(myLatSpan) myLatSpan.textContent = userLocation.latitude.toFixed(6);
+            if(myLonSpan) myLonSpan.textContent = userLocation.longitude.toFixed(6);
+        },
+        error => {
+            if(myLatSpan) myLatSpan.textContent = 'Unavailable';
+            if(myLonSpan) myLonSpan.textContent = 'Unavailable';
+            console.warn('Geolocation error:', error.message);
+        }
+    );
+}
 
 // Get user's location
 navigator.geolocation?.getCurrentPosition(
@@ -1045,3 +1031,4 @@ navigator.geolocation?.getCurrentPosition(
         myLonSpan.textContent = 'Unavailable';
         console.warn('Geolocation error:', error.message);
     }
+};
