@@ -410,6 +410,21 @@ function renderSavedPoints() {
     }
 
     savedPoints.forEach((point, index) => {
+		let distanceText = 'N/A';
+
+		if (userLocation) {
+			const distKm = calculateDistance(
+				userLocation.latitude,
+				userLocation.longitude,
+				point.latitude,
+				point.longitude
+			);
+
+			distanceText = distKm < 1
+				? `${(distKm * 1000).toFixed(0)} m`
+				: `${distKm.toFixed(3)} km`;
+		}
+
         const pointDiv = document.createElement('div');
         pointDiv.className = 'point-card mb-4';
         
