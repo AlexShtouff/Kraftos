@@ -77,6 +77,13 @@ let deviceHeading = null;
 // Defined for proj4js
 const ITM_PROJ_DEF = '+proj=tmerc +lat_0=31.73439388888889 +lon_0=35.20451694444445 +k=1.0000067 +x_0=219521.4 +y_0=626907.39 +ellps=GRS80 +towgs84=-48,55,52,0,0,0,0 +units=m +no_defs';
 
+				 
+			 
+					 
+			   
+			   
+  
+ 
 function calculateMagneticDeclination(lat, lon) {
     //Israel approximation based on latitude
     // Southern Israel: ~3.2°
@@ -118,11 +125,17 @@ function startDeviceOrientationTracking() {
             updateDirectionArrows();
             
             // Note: updateDebugDisplay() was removed as part of deleting debug functionality
+																		   
+															   
+
+									
+								 
         }
     };
 
     // iOS requires explicit permission for DeviceOrientation
     if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+																			
         DeviceOrientationEvent.requestPermission()
             .then(response => {
                 if (response === 'granted') {
@@ -135,6 +148,47 @@ function startDeviceOrientationTracking() {
     }
 }
 
+							   
+															
+					  
+												   
+									  
+									
+							
+					  
+						
+										   
+						
+						  
+							   
+								   
+							
+						  
+							 
+		  
+											  
+	 
+	
+							
+															
+																					
+								 
+			  
+											  
+																					
+									  
+			  
+													 
+														 
+													   
+																					
+									
+			  
+															
+												  
+													
+	  
+ 
 function updateDirectionArrows() {
     if (!userLocation || deviceHeading === null) return;
 
@@ -153,11 +207,25 @@ function updateDirectionArrows() {
         // Subtract 90 because the symbol '➔' points right by default.
         // This forces it to point Up (North) when bearing and heading are aligned.
         const rotation = (bearing - deviceHeading + 360 - 90) % 360;
+		
+											   
+												 
         
+												   
+										  
         el.style.transform = `rotate(${rotation}deg)`;
     });
 }
 
+								   
+									 
+
+										  
+								
+
+							
+ 
+ 
 function convertItmToWgs84(easting, northing) {
     // --- GRS80 Ellipsoid Parameters ---
 	const a = 6378137; // Semi-major axis
@@ -381,13 +449,15 @@ function showInterface(mode) {
 }
 
 function renderManualResults(result) {
-    if (!result) return;
+ //   if (!result) return;
     const lat = result.latitude.toFixed(6);
     const lon = result.longitude.toFixed(6);
 
+							  
     latResult.textContent = lat;
     lonResult.textContent = lon;
 
+									 
     latResultBox?.classList.add('success');
     lonResultBox?.classList.add('success');
 
@@ -399,11 +469,16 @@ function renderManualResults(result) {
         <a href="${wazeUrl}" target="_blank" class="map-button">Waze</a>
     `;
     manualActionsContainer.style.display = 'flex';
+
     addPointBtn.style.display = 'inline-block';
 }
 
+   
+													   
+   
 function renderSavedPoints() {
     myPointsContainer.innerHTML = '';
+
     if (savedPoints.length === 0) {
         myPointsContainer.innerHTML = '<p class="text-gray-500 text-center text-sm">No points saved yet.</p>';
         return;
@@ -444,13 +519,47 @@ function renderSavedPoints() {
                 <div class="text-xs text-gray-500"><strong>ITM:</strong> ${point.easting.toFixed(2)} / ${point.northing.toFixed(2)}</div>
                 <div class="text-xs text-gray-500 mb-2"><strong>WGS84:</strong> ${point.latitude.toFixed(6)}, ${point.longitude.toFixed(6)}</div>
                 
+					  
+										  
+																  
+																						
+					  
+										  
+																	  
+																						
+					  
                 <div class="distance-row-container">
                     <span class="distance-text">
                         Dist: <strong data-point-index="${index}">${distDisplay}</strong>
                     </span>
                     <span class="direction-arrow" data-point-index="${index}">➔</span>
                 </div>
+											
+											
+														
+									  
+												
+													  
+													   
+											   
+											   
+												
+									
+							 
+					  
             </div>
+																									 
+																	
+														   
+					   
+					 
+										   
+											   
+																							  
+				 
+					   
+					   
+				  
         `;
         myPointsContainer.appendChild(pointDiv);
     });
@@ -467,6 +576,7 @@ function renderSavedPoints() {
 function updateDistancesForSavedPoints() {
     if (!userLocation) return;
 
+																				  
     document.querySelectorAll('strong[data-point-index]').forEach(el => {
         const index = parseInt(el.dataset.pointIndex);
         const point = savedPoints[index];
@@ -535,6 +645,61 @@ function handleManualConvert() {
         errorMessage.classList.remove('hidden');
     }
 }
+
+																				
+									  
+									   
+
+												
+						 
+																											 
+												 
+	   
+
+																	
+																			  
+
+										   
+											
+						
+													   
+				  
+				   
+				   
+				   
+		 
+
+							 
+								  
+																									   
+																								
+																				 
+																								   
+						 
+						 
+					
+									  
+																				 
+																				   
+																			  
+																			   
+											  
+											  
+															   
+										 
+							   
+						
+											 
+																										
+																							   
+						
+					
+				
+		
+
+																	   
+												 
+   
 
 function handleAddPoint() {
     const easting = parseFloat(eastingInput.value);
@@ -898,6 +1063,7 @@ function processConvertedCsv() {
         } else {
             wgs84 = convertItmToWgs84(easting, northing);
             
+													  
             if (wgs84) {
                 savedPoints.push({
                     name: pointName,
@@ -964,46 +1130,88 @@ function processConvertedCsv() {
 // ... (Your conversion functions remain the same) ...
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Initialize Elements inside the listener to ensure they exist
-    const convertBtn = document.getElementById('convert-btn');
-    const savePointBtn = document.getElementById('save-point-btn');
-    const modeToggleButton = document.getElementById('options-menu');
-    const modeDropdown = document.getElementById('mode-dropdown');
-    
-    // 2. Load data
-    loadFromLocalStorage(); 
+																	  
+															  
+																   
+																	 
+																  
 	
-    // 3. Set up listeners
+				   
+							
+ 
+    // Event listeners
     if (convertBtn) convertBtn.addEventListener('click', handleManualConvert);
-    if (savePointBtn) savePointBtn.addEventListener('click', handleAddPoint);
-    
-    startUserLocationTracking();
+	
+	
+	startUserLocationTracking();
     startDeviceOrientationTracking();
 
-    // Mode switching
+    // Use defensive check for savePointBtn and correct function
+    if (savePointBtn) savePointBtn.addEventListener('click', handleAddPoint);
+
+    // REMOVED heightCalculateBtn listener here as it is now handled above
+
+    if (myPointsBtn) {
+        myPointsBtn.addEventListener('click', () => {
+            const aboutSection = document.getElementById('about-section');
+            myPointsSection.classList.toggle('hidden');
+            aboutSection.classList.toggle('hidden');
+
+            if (!myPointsSection.classList.contains('hidden')) {
+                renderSavedPoints();
+                myPointsBtn.textContent = 'Hide Saved Points';
+            } else {
+                myPointsBtn.textContent = 'View Saved Points';
+            }
+        });
+    }
+
+    if (csvUploadInput) {
+        csvUploadInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                parseCsvFile(file);
+            }
+        });
+    }
+
+    if (processCsvBtn) processCsvBtn.addEventListener('click', processConvertedCsv);
+
+    // Mode switching logic
+    modeToggleButton = document.getElementById('options-menu');
+    modeDropdown = document.getElementById('mode-dropdown');
+    const menuManualInput = document.getElementById('menu-manual-input');
+    const menuCsvUpload = document.getElementById('menu-csv-upload');
+    const menuStaticData = document.getElementById('menu-static-data');
+
     if (modeToggleButton && modeDropdown) {
         modeToggleButton.addEventListener('click', () => {
             modeDropdown.classList.toggle('hidden');
         });
     }
 
-    // Use IDs directly instead of re-assigning const variables
-    document.getElementById('menu-manual-input')?.addEventListener('click', (e) => {
-        e.preventDefault();
-        showInterface('manual');
-    });
+    if (menuManualInput) {
+        menuManualInput.addEventListener('click', (event) => {
+            event.preventDefault();
+            showInterface('manual');
+        });
+    }
 
-    document.getElementById('menu-csv-upload')?.addEventListener('click', (e) => {
-        e.preventDefault();
-        showInterface('csv');
-    });
+    if (menuCsvUpload) {
+        menuCsvUpload.addEventListener('click', (event) => {
+            event.preventDefault();
+            showInterface('csv');
+        });
+    }
 
-    document.getElementById('menu-static-data')?.addEventListener('click', (e) => {
-        e.preventDefault();
-        showInterface('static');
-    });
+    if (menuStaticData) {
+        menuStaticData.addEventListener('click', (event) => {
+            event.preventDefault();
+            showInterface('static');
+        });
+    }
 
-    window.addEventListener('click', (e) => {
+    window.addEventListener('click', function (e) {
         if (modeDropdown && !modeToggleButton.contains(e.target) && !modeDropdown.contains(e.target)) {
             modeDropdown.classList.add('hidden');
         }
@@ -1011,25 +1219,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     showInterface('manual');
 });
-
-// 4. Corrected Geolocation block
-if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-        position => {
-            userLocation = {
-                latitude: position.coords.latitude,
-                longitude: position.coords.longitude
-            };
-            if(myLatSpan) myLatSpan.textContent = userLocation.latitude.toFixed(6);
-            if(myLonSpan) myLonSpan.textContent = userLocation.longitude.toFixed(6);
-        },
-        error => {
-            if(myLatSpan) myLatSpan.textContent = 'Unavailable';
-            if(myLonSpan) myLonSpan.textContent = 'Unavailable';
-            console.warn('Geolocation error:', error.message);
-        }
-    );
-}
 
 // Get user's location
 navigator.geolocation?.getCurrentPosition(
@@ -1047,3 +1236,15 @@ navigator.geolocation?.getCurrentPosition(
         console.warn('Geolocation error:', error.message);
     }
 };
+   
+ 
+
+					  
+										  
+				 
+						
+											   
+												
+		  
+																 
+																  
