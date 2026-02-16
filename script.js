@@ -212,8 +212,13 @@ function updateDirectionArrows() {
     });
 }
 
+    let lastUpdate = 0;
 function handleOrientation(event) {
-    if (event.alpha === null) return;
+    const now = Date.now();
+    if (now - lastUpdate < 100) return; // Only update every 100ms
+    lastUpdate = now;
+	
+	if (event.alpha === null) return;
 
     // alpha = compass heading (0 = north)
     deviceHeading = event.alpha;
