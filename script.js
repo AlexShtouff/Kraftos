@@ -198,6 +198,7 @@ function updateDebugDisplay() {
         <div>Rotation: ${debugInfo.rotation}°</div>
     `;
 }
+
 function updateDirectionArrows() {
     if (!userLocation || deviceHeading === null) return;
 
@@ -213,15 +214,12 @@ function updateDirectionArrows() {
             point.longitude
         );
 
-        // Rotation is: Where the point is relative to North (bearing) 
-        // minus where the phone is pointing relative to North (deviceHeading)
-        const rotation = (bearing - deviceHeading + 360) % 360;
+        // Standardized rotation: 
+        // If the arrow is a 'up' arrow (➤), it should point to 0° initially.
+        // We subtract the device's current heading from the destination bearing.
+        let rotation = (bearing - deviceHeading);
         
-        debugInfo.bearing = bearing.toFixed(1);
-        debugInfo.rotation = rotation.toFixed(1);
-        
-        // Use transform: rotate to point the arrow
-        el.style.display = 'inline-block';
+        // Ensure the arrow takes the shortest path to the target
         el.style.transform = `rotate(${rotation}deg)`;
     });
 }
@@ -572,21 +570,21 @@ function updateDistancesForSavedPoints() {
 // --- Event Handlers ---
 
 function handleManualConvert() {
+	
     errorMessage.classList.add('hidden');
-
     const easting = parseFloat(eastingInput.value);
     const northing = parseFloat(northingInput.value);
 
-    if (isNaN(easting) || isNaN(northing) || easting <= 0 || northing <= 0) {
-        errorMessage.textContent = 'Please enter valid, positive ITM Easting and Northing values.';
+    // GUARD RAIL: Check if coordinates are actually in Israel
+    if (easting < ISRAEL_BOUNDS.minE || easting > ISRAEL_BOUNDS.maxE || 
+        northing < ISRAEL_BOUNDS.minN || northing > ISRAEL_BOUNDS.maxN) {
+        errorMessage.textContent = 'Warning: These coordinates appear to be outside of the Israel Grid area.';
         errorMessage.classList.remove('hidden');
-        renderManualResults(null);
-        return;
+        // We still allow the conversion, but we warn the user.
     }
 
     const wgs84 = convertItmToWgs84(easting, northing);
     renderManualResults(wgs84);
-	
 	
 	lastConversion = {
 		easting,
