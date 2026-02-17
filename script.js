@@ -214,13 +214,17 @@ function updateDirectionArrows() {
             point.longitude
         );
 
-        // Standardized rotation: 
-        // If the arrow is a 'up' arrow (➤), it should point to 0° initially.
-        // We subtract the device's current heading from the destination bearing.
-        let rotation = (bearing - deviceHeading);
+        // FIX: If the arrow is 180 degrees off, we adjust the calculation 
+        // to account for the inverted coordinate system.
+        let rotation = (bearing - deviceHeading + 180) % 360;
         
-        // Ensure the arrow takes the shortest path to the target
+        // Update the visual rotation
+        el.style.display = 'inline-block';
         el.style.transform = `rotate(${rotation}deg)`;
+        
+        // Update debug info for your tracking
+        debugInfo.bearing = bearing.toFixed(1);
+        debugInfo.rotation = rotation.toFixed(1);
     });
 }
 
