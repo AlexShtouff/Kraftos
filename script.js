@@ -66,16 +66,6 @@ let csvHeaders = [];
 let locationWatchId = null;
 let deviceHeading = null;
 let lastUpdate = 0;
-// Define ITM projection (Israel Transverse Mercator - IG05/IG12)
-// Defined for proj4js
-//const ITM_PROJ_DEF = '+proj=tmerc +lat_0=31.73439388888889 +lon_0=35.20451694444445 +k=1.0000067 +x_0=219521.4 +y_0=626907.39 +ellps=GRS80 +towgs84=-48,55,52,0,0,0,0 +units=m +no_defs';
-
-let debugInfo = {
-    alpha: 0,
-    deviceHeading: 0,
-    bearing: 0,
-    rotation: 0
-};
 
 // --- GRS80 Ellipsoid Parameters ---
 const GRS80 = {
@@ -143,13 +133,8 @@ function startDeviceOrientationTracking() {
             }
             
             deviceHeading = (heading + declination + 360) % 360;
-            
-            // Debugging info
-            debugInfo.alpha = event.alpha ? event.alpha.toFixed(1) : 'N/A';
-            debugInfo.deviceHeading = deviceHeading.toFixed(1);
-
+           
             updateDirectionArrows();
-            updateDebugDisplay();
         }
     };
 
@@ -165,48 +150,6 @@ function startDeviceOrientationTracking() {
     } else {
         window.addEventListener('deviceorientation', handleOrientation);
     }
-}
-
-function updateDebugDisplay() {
-    let debugPanel = document.getElementById('debug-panel');
-    if (!debugPanel) {
-        debugPanel = document.createElement('div');
-        debugPanel.id = 'debug-panel';
-        debugPanel.style.cssText = `
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: rgba(0, 0, 0, 0.8);
-            color: #0f0;
-            padding: 10px;
-            border-radius: 5px;
-            font-family: monospace;
-            font-size: 11px;
-            z-index: 9999;
-            max-width: 250px;
-        `;
-        document.body.appendChild(debugPanel);
-    }
-    
-    debugPanel.innerHTML = `
-        <div><strong>Device Orientation Debug</strong></div>
-        <div style="border-top: 1px #0f0 solid; margin-top: 5px; padding-top: 5px;">
-            <strong>Raw:</strong>
-        </div>
-        <div>Alpha: ${debugInfo.alpha}°</div>
-        <div style="border-top: 1px #0f0 solid; margin-top: 5px; padding-top: 5px;">
-            <strong>Formulas:</strong>
-        </div>
-        <div>F1 (α+d): ${debugInfo.formula1}°</div>
-        <div>F2 (360-α+d): ${debugInfo.formula2}°</div>
-        <div>F3 (360-α): ${debugInfo.formula3}°</div>
-        <div style="border-top: 1px #0f0 solid; margin-top: 5px; padding-top: 5px;">
-            <strong>Active:</strong>
-        </div>
-        <div>Device Head: ${debugInfo.deviceHeading}°</div>
-        <div>Bearing: ${debugInfo.bearing}°</div>
-        <div>Rotation: ${debugInfo.rotation}°</div>
-    `;
 }
 
 function updateDirectionArrows() {
@@ -231,10 +174,7 @@ function updateDirectionArrows() {
         // Update the visual rotation
         el.style.display = 'inline-block';
         el.style.transform = `rotate(${rotation}deg)`;
-        
-        // Update debug info for your tracking
-        debugInfo.bearing = bearing.toFixed(1);
-        debugInfo.rotation = rotation.toFixed(1);
+                
     });
 }
 
@@ -553,7 +493,8 @@ function renderSavedPoints() {
         button.addEventListener('click', (e) => {
             const indexToDelete = parseInt(e.target.dataset.index);
             savedPoints.splice(indexToDelete, 1);
-            renderSavedPoints();
+            saveToLocalStorage();         // ADD THIS LINE: Updates the permanent storage
+			renderSavedPoints();
         });
     });
 }
@@ -724,6 +665,17 @@ addPointBtn.addEventListener('click', () => {
                 latitude,
                 longitude
             });
+			
+			// FIND THIS IN YOUR SCRIPT:
+			function saveCurrentPoint() {
+				// ... existing code that creates the point object ...
+				
+				savedPoints.push(newPoint); // This adds it to the list in the current session
+				
+				saveToLocalStorage();       // ADD THIS LINE: This makes it permanent!
+				
+				renderSavedPoints();
+			}
 
             renderSavedPoints();  // ✅ Single function call
 
@@ -1190,3 +1142,20 @@ navigator.geolocation?.getCurrentPosition(
         console.warn('Geolocation error:', error.message);
     }
 );
+
+function saveToLocalStorage() {
+    // This takes your 'savedPoints' list and stores it in the browser's hidden vault
+    localStorage.setItem('itm_converter_points', JSON.stringify(savedPoints));
+};
+
+function loadFromLocalStorage() {
+    const stored = localStorage.getItem('itm_converter_points');
+    if (stored) {
+        savedPoints = JSON.parse(stored);
+        // Important: Trigger the UI to draw the points we just loaded
+        renderSavedPoints(); 
+    }
+}
+
+// Call it immediately
+loadFromLocalStorage();
