@@ -48,7 +48,7 @@ body {
     line-height: 1;
     /* Crucial: Ensure it rotates around its own center */
     transform-origin: center center;
-    transition: transform 0.1s linear;
+    transition: none !important;
     will-change: transform;
 }
 
