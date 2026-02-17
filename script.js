@@ -90,7 +90,17 @@ const ITM_PARAMS = {
     lon0_rad: 35.2045169444444 * Math.PI / 180,
     k0: 1.0000067,
     false_easting: 219529.584,
-    false_northing: 626907.39
+    false_northing: 626907.39,
+    // High-precision Bursa-Wolf 7-parameters
+    dX: -24.0024, dY: -17.1032, dZ: -17.8444,
+    rX: -0.33077, rY: -1.85269, rZ: 1.66969,
+    s_ppm: 5.4262
+};
+
+const WGS84 = {
+    a: 6378137,
+    f: 1 / 298.257223563,
+    get e_sq() { return 2 * this.f - Math.pow(this.f, 2); }
 };
 
 const ISRAEL_BOUNDS = {
@@ -231,7 +241,7 @@ function updateDirectionArrows() {
     
 function handleOrientation(event) {
     const now = Date.now();
-    if (now - lastUpdate < 100) return; // Only update every 100ms
+    if (now - lastUpdate < 30) return; // Only update every 30ms
     lastUpdate = now;
 	
 	if (event.alpha === null) return;
@@ -243,69 +253,67 @@ function handleOrientation(event) {
 }
  
 function convertItmToWgs84(easting, northing) {
-    const a = GRS80.a;
-    const e_sq = GRS80.e_sq;
-    const e_prime_sq = GRS80.e_prime_sq;
+    // 1. Initial local Grid to Geographic (ITM -> GRS80)
+    const { a, e_sq, e_prime_sq } = GRS80;
+    const { lat0_rad, lon0_rad, k0, false_easting, false_northing } = ITM_PARAMS;
+
+    const M0_coeff0 = 1 - e_sq / 4 - 3 * (e_sq ** 2) / 64 - 5 * (e_sq ** 3) / 256;
+    const M0_coeff2 = 3 * e_sq / 8 + 3 * (e_sq ** 2) / 32 + 45 * (e_sq ** 3) / 1024;
+    const M0_coeff4 = 15 * (e_sq ** 2) / 256 + 45 * (e_sq ** 3) / 1024;
+    const M0_coeff6 = 35 * (e_sq ** 3) / 3072;
     
-    const lat0_rad = ITM_PARAMS.lat0_rad;
-    const lon0_rad = ITM_PARAMS.lon0_rad;
-    const k0 = ITM_PARAMS.k0;
-    const false_easting = ITM_PARAMS.false_easting;
-    const false_northing = ITM_PARAMS.false_northing;
-	
-	const M0_coeff0 = 1 - e_sq / 4 - 3 * e_sq ** 2 / 64 - 5 * e_sq ** 3 / 256;
-	const M0_coeff2 = 3 * e_sq / 8 + 3 * e_sq ** 2 / 32 + 45 * e_sq ** 3 / 1024;
-	const M0_coeff4 = 15 * e_sq ** 2 / 256 + 45 * e_sq ** 3 / 1024;
-	const M0_coeff6 = 35 * e_sq ** 3 / 3072;
-	const M0 = a * (M0_coeff0 * lat0_rad - M0_coeff2 * Math.sin(2 * lat0_rad) + M0_coeff4 * Math.sin(4 * lat0_rad) - M0_coeff6 * Math.sin(6 * lat0_rad));
-	const M = M0 + (northing - false_northing) / k0;
-	const mu = M / (a * M0_coeff0);
-	const e1 = (1 - Math.sqrt(1 - e_sq)) / (1 + Math.sqrt(1 - e_sq));
-	const phi1_coeff2 = 3 * e1 / 2 - 27 * e1 ** 3 / 32;
-	const phi1_coeff4 = 21 * e1 ** 2 / 16 - 55 * e1 ** 4 / 32;
-	const phi1_coeff6 = 151 * e1 ** 3 / 96;
-	const phi1_coeff8 = 1097 * e1 ** 4 / 512;
-	const phi1 = mu + phi1_coeff2 * Math.sin(2 * mu) + phi1_coeff4 * Math.sin(4 * mu) + phi1_coeff6 * Math.sin(6 * mu) + phi1_coeff8 * Math.sin(8 * mu);
-	const C1 = e_prime_sq * Math.cos(phi1) ** 2;
-	const T1 = Math.tan(phi1) ** 2;
-	const N1 = a / Math.sqrt(1 - e_sq * Math.sin(phi1) ** 2);
-	const R1 = a * (1 - e_sq) / Math.pow(1 - e_sq * Math.sin(phi1) ** 2, 1.5);
-	const D = (easting - false_easting) / (N1 * k0);
-	const lat_rad_grs80 = phi1 - (N1 * Math.tan(phi1) / R1) * (D ** 2 / 2 - (5 + 3 * T1 + 10 * C1 - 4 * C1 ** 2 - 9 * e_prime_sq) * D ** 4 / 24 + (61 + 90 * T1 + 298 * C1 + 45 * T1 ** 2 - 252 * e_prime_sq - 3 * C1 ** 2) * D ** 6 / 720);
-	const lon_rad_grs80 = lon0_rad + (D - (1 + 2 * T1 + C1) * D ** 3 / 6 + (5 - 2 * C1 + 28 * T1 - 3 * C1 ** 2 + 8 * e_prime_sq + 24 * T1 ** 2) * D ** 5 / 120) / Math.cos(phi1);
-	const h_grs80 = 0;
-	const sinLat_grs80 = Math.sin(lat_rad_grs80);
-	const cosLat_grs80 = Math.cos(lat_rad_grs80);
-	const sinLon_grs80 = Math.sin(lon_rad_grs80);
-	const cosLon_grs80 = Math.cos(lon_rad_grs80);
-	const N_grs80 = a / Math.sqrt(1 - e_sq * sinLat_grs80 ** 2);
-	const X_grs80 = (N_grs80 + h_grs80) * cosLat_grs80 * cosLon_grs80;
-	const Y_grs80 = (N_grs80 + h_grs80) * cosLat_grs80 * sinLon_grs80;
-	const Z_grs80 = (N_grs80 * (1 - e_sq) + h_grs80) * sinLat_grs80;
-	const dX = -24.0024, dY = -17.1032, dZ = -17.8444;
-	const rX_arcsec = -0.33077, rY_arcsec = -1.85269, rZ_arcsec = 1.66969;
-	const s_ppm = 5.4262;
-	const toRadians = Math.PI / (180 * 3600);
-	const rX = rX_arcsec * toRadians, rY = rY_arcsec * toRadians, rZ = rZ_arcsec * toRadians;
-	const s_factor = s_ppm * 1e-6;
-	const X_wgs84 = dX + (1 + s_factor) * X_grs80 - rZ * Y_grs80 + rY * Z_grs80;
-	const Y_wgs84 = dY + rZ * X_grs80 + (1 + s_factor) * Y_grs80 - rX * Z_grs80;
-	const Z_wgs84 = dZ - rY * X_grs80 + rX * Y_grs80 + (1 + s_factor) * Z_grs80;
-	const a_wgs84 = 6378137, f_wgs84 = 1 / 298.257223563;
-	const e_sq_wgs84 = 2 * f_wgs84 - f_wgs84 ** 2;
-	const p = Math.sqrt(X_wgs84 ** 2 + Y_wgs84 ** 2);
-	let lon_rad_wgs84 = Math.atan2(Y_wgs84, X_wgs84);
-	let lat_rad_wgs84 = Math.atan2(Z_wgs84, p * (1 - e_sq_wgs84));
-	for (let i = 0; i < 10; i++) {
-		const lat_prev = lat_rad_wgs84;
-		const N_wgs84 = a_wgs84 / Math.sqrt(1 - e_sq_wgs84 * Math.sin(lat_prev) ** 2);
-		lat_rad_wgs84 = Math.atan2(Z_wgs84 + e_sq_wgs84 * N_wgs84 * Math.sin(lat_prev), p);
-		if (Math.abs(lat_rad_wgs84 - lat_prev) < 1e-12) break;
-	}
+    const M0 = a * (M0_coeff0 * lat0_rad - M0_coeff2 * Math.sin(2 * lat0_rad) + M0_coeff4 * Math.sin(4 * lat0_rad) - M0_coeff6 * Math.sin(6 * lat0_rad));
+    const M = M0 + (northing - false_northing) / k0;
+    const mu = M / (a * M0_coeff0);
+    
+    const e1 = (1 - Math.sqrt(1 - e_sq)) / (1 + Math.sqrt(1 - e_sq));
+    const phi1 = mu + (3 * e1 / 2 - 27 * (e1 ** 3) / 32) * Math.sin(2 * mu) 
+                    + (21 * (e1 ** 2) / 16 - 55 * (e1 ** 4) / 32) * Math.sin(4 * mu) 
+                    + (151 * (e1 ** 3) / 96) * Math.sin(6 * mu);
+
+    const C1 = e_prime_sq * Math.cos(phi1) ** 2;
+    const T1 = Math.tan(phi1) ** 2;
+    const N1 = a / Math.sqrt(1 - e_sq * Math.sin(phi1) ** 2);
+    const R1 = a * (1 - e_sq) / Math.pow(1 - e_sq * Math.sin(phi1) ** 2, 1.5);
+    const D = (easting - false_easting) / (N1 * k0);
+
+    const lat_grs80 = phi1 - (N1 * Math.tan(phi1) / R1) * (D ** 2 / 2 - (5 + 3 * T1 + 10 * C1 - 4 * (C1 ** 2) - 9 * e_prime_sq) * (D ** 4) / 24);
+    const lon_grs80 = lon0_rad + (D - (1 + 2 * T1 + C1) * (D ** 3) / 6) / Math.cos(phi1);
+
+    // 2. Geographic to Geocentric (Cartesian XYZ)
+    const N = a / Math.sqrt(1 - e_sq * Math.sin(lat_grs80) ** 2);
+    const X_g = N * Math.cos(lat_grs80) * Math.cos(lon_grs80);
+    const Y_g = N * Math.cos(lat_grs80) * Math.sin(lon_grs80);
+    const Z_g = (N * (1 - e_sq)) * Math.sin(lat_grs80);
+
+    // 3. 7-Parameter Transformation (Bursa-Wolf)
+    const toRad = Math.PI / (180 * 3600); // Arc-seconds to Radians
+    const rx = ITM_PARAMS.rX * toRad;
+    const ry = ITM_PARAMS.rY * toRad;
+    const rz = ITM_PARAMS.rZ * toRad;
+    const s = 1 + (ITM_PARAMS.s_ppm * 1e-6);
+
+    const X_w = ITM_PARAMS.dX + s * (X_g - rz * Y_g + ry * Z_g);
+    const Y_w = ITM_PARAMS.dY + s * (rz * X_g + Y_g - rx * Z_g);
+    const Z_w = ITM_PARAMS.dZ + s * (-ry * X_g + rx * Y_g + Z_g);
+
+    // 4. Geocentric back to Geographic (WGS84)
+    const e2_w = WGS84.e_sq;
+    const p = Math.sqrt(X_w ** 2 + Y_w ** 2);
+    let lat_w = Math.atan2(Z_w, p * (1 - e2_w));
+    let lon_w = Math.atan2(Y_w, X_w);
+
+    // Precision Iteration
+    for (let i = 0; i < 100; i++) {
+        const lat_old = lat_w;
+        const N_w = WGS84.a / Math.sqrt(1 - e2_w * Math.sin(lat_w) ** 2);
+        lat_w = Math.atan2(Z_w + e2_w * N_w * Math.sin(lat_w), p);
+        if (Math.abs(lat_w - lat_old) < 1e-12) break;
+    }
 
     return {
-        latitude: lat_rad_wgs84 * 180 / Math.PI,
-        longitude: lon_rad_wgs84 * 180 / Math.PI,
+        latitude: lat_w * 180 / Math.PI,
+        longitude: lon_w * 180 / Math.PI
     };
 }
 
