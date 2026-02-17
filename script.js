@@ -177,7 +177,6 @@ function updateDirectionArrows() {
                 
     });
 }
-
     
 function handleOrientation(event) {
     const now = Date.now();
@@ -187,9 +186,8 @@ function handleOrientation(event) {
 	if (event.alpha === null) return;
 
     // alpha = compass heading (0 = north)
-    deviceHeading = event.alpha;
-
-    updateDirectionArrows();
+    //deviceHeading = event.alpha;
+//    updateDirectionArrows();
 }
  
 function convertItmToWgs84(easting, northing) {
@@ -545,6 +543,8 @@ function handleManualConvert() {
 		latitude: wgs84.latitude,
 		longitude: wgs84.longitude
 	};
+	
+	
 	addPointBtn.style.display = 'inline-block';
 
     if (!wgs84) {
@@ -552,61 +552,6 @@ function handleManualConvert() {
         errorMessage.classList.remove('hidden');
     }
 }
-
-//function appendToMyPoints(pointName, easting, northing, latitude, longitude) {
-  //  const lat = latitude.toFixed(6);
-    //const lon = longitude.toFixed(6);
-
-   // let distanceText = 'Distance unavailable';
-   // if (userLocation) {
-     //   const dist = calculateDistance(userLocation.latitude, userLocation.longitude, latitude, longitude);
-       // distanceText = `${dist.toFixed(3)} km`;
-   // }
-
-    //const gmapUrl = `https://www.google.com/maps?q=${lat},${lon}`;
-    //const wazeUrl = `https://www.waze.com/ul?ll=${lat},${lon}&navigate=yes`;
-
-    // Store the point in savedPoints FIRST
-    //const pointIndex = savedPoints.length;
-    //savedPoints.push({
-      //  name: pointName || `Point ${pointIndex + 1}`,
-        //easting,
-        //northing,
-        //latitude,
-        //longitude
-    //});
-
-    //const pointCardHTML = `
-      //  <div class="point-card">
-        //    <div class="point-header p-3 flex justify-between items-center border-b border-gray-200">
-          //      <h3 class="point-name text-base font-semibold text-gray-800">${pointName}</h3>
-            //    <span class="direction-arrow" data-point-index="${pointIndex}" 
-              //        style="display:inline-block; transform: rotate(0deg); font-size: 1.25rem;">
-                //    ➤
-                //</span>
-            //</div>
-            //<div class="point-body">
-              //  <div class="point-detail"><span>Easting</span> ${easting}</div>
-                //<div class="point-detail"><span>Northing</span> ${northing}</div>
-                //<div class="point-detail"><span>Latitude</span> ${lat}</div>
-                //<div class="point-detail"><span>Longitude</span> ${lon}</div>
-                //<div class="point-distance">
-                  //  Distance to My Location:
-                    //<strong data-point-index="${pointIndex}">
-                      //  ${distanceText}
-                    //</strong>
-                //</div>
-                //<div class="point-actions">
-                  //  <a href="${gmapUrl}" target="_blank" class="map-button-csv google">Google Maps</a>
-                    //<a href="${wazeUrl}" target="_blank" class="map-button-csv waze">Waze</a>
-               // </div>
-            //</div>
-        //</div>
-    //`;
-
-    //myPointsContainer.insertAdjacentHTML('beforeend', pointCardHTML);
-    //myPointsSection.classList.remove('hidden');
-//}
 
 function handleAddPoint() {
     const easting = parseFloat(eastingInput.value);
@@ -632,7 +577,8 @@ function handleAddPoint() {
             longitude
         });
 
-        renderSavedPoints();  // ✅ Single function call to render everything
+        saveToLocalStorage();
+		renderSavedPoints();  // ✅ Single function call to render everything
         myPointsSection.classList.remove('hidden');
         
         // Reset UI
@@ -649,7 +595,7 @@ function handleAddPoint() {
 }
 
 addPointBtn.addEventListener('click', () => {
-	console.log("Add to List CLICKED — lastConversion:", lastConversion);
+	//console.log("Add to List CLICKED — lastConversion:", lastConversion);
 
     if (lastConversion) {
         const pointName = prompt("Please enter a name for this point:", "Manual Point");
@@ -657,7 +603,6 @@ addPointBtn.addEventListener('click', () => {
         if (pointName) { // If user entered a name
             const { easting, northing, latitude, longitude } = lastConversion;
 
-            // ✅ Replace appendToMyPoints with this:
             savedPoints.push({
                 name: pointName,
                 easting,
@@ -666,18 +611,8 @@ addPointBtn.addEventListener('click', () => {
                 longitude
             });
 			
-			// FIND THIS IN YOUR SCRIPT:
-			function saveCurrentPoint() {
-				// ... existing code that creates the point object ...
-				
-				savedPoints.push(newPoint); // This adds it to the list in the current session
-				
-				saveToLocalStorage();       // ADD THIS LINE: This makes it permanent!
-				
-				renderSavedPoints();
-			}
-
-            renderSavedPoints();  // ✅ Single function call
+			saveToLocalStorage(); // This actually triggers the save
+			renderSavedPoints();  // ✅ Single function call
 
             // Reset UI
             eastingInput.value = '';
