@@ -422,41 +422,41 @@ function handleManualConvert() {
     }
 }
 
-function appendToMyPoints(pointName, easting, northing, latitude, longitude) {
-    const lat = latitude.toFixed(6);
-    const lon = longitude.toFixed(6);
+//function appendToMyPoints(pointName, easting, northing, latitude, longitude) {
+  //  const lat = latitude.toFixed(6);
+   // const lon = longitude.toFixed(6);
 
-    let distanceText = 'Distance unavailable';
-    if (userLocation) {
-        const dist = calculateDistance(userLocation.latitude, userLocation.longitude, latitude, longitude);
-        distanceText = `Distance from my location: <strong>${dist.toFixed(2)} km</strong>`;
-    }
+    //let distanceText = 'Distance unavailable';
+    //if (userLocation) {
+      //  const dist = calculateDistance(userLocation.latitude, userLocation.longitude, latitude, longitude);
+        //distanceText = `Distance from my location: <strong>${dist.toFixed(2)} km</strong>`;
+    //}
 
-    const gmapUrl = `https://www.google.com/maps?q=${lat},${lon}`;
-    const wazeUrl = `https://www.waze.com/ul?ll=${lat},${lon}&navigate=yes`;
+    //const gmapUrl = `https://www.google.com/maps?q=${lat},${lon}`;
+    //const wazeUrl = `https://www.waze.com/ul?ll=${lat},${lon}&navigate=yes`;
 
-    const pointCardHTML = `
-        <div class="point-card">
-            <div class="point-header">
-                <h3 class="point-name">${pointName}</h3>
-            </div>
-            <div class="point-body">
-                <div class="point-detail"><span>Easting</span> ${easting}</div>
-                <div class="point-detail"><span>Northing</span> ${northing}</div>
-                <div class="point-detail"><span>Latitude</span> ${lat}</div>
-                <div class="point-detail"><span>Longitude</span> ${lon}</div>
-                <div class="point-distance">${distanceText}</div>
-                <div class="point-actions">
-                    <a href="${gmapUrl}" target="_blank" class="map-button-csv google">Google Maps</a>
-                    <a href="${wazeUrl}" target="_blank" class="map-button-csv waze">Waze</a>
-                </div>
-            </div>
-        </div>
-    `;
+    //const pointCardHTML = `
+      //  <div class="point-card">
+        //    <div class="point-header">
+          //      <h3 class="point-name">${pointName}</h3>
+            //</div>
+            //<div class="point-body">
+//                <div class="point-detail"><span>Easting</span> ${easting}</div>
+  //              <div class="point-detail"><span>Northing</span> ${northing}</div>
+    //            <div class="point-detail"><span>Latitude</span> ${lat}</div>
+      //          <div class="point-detail"><span>Longitude</span> ${lon}</div>
+        //        <div class="point-distance">${distanceText}</div>
+          //      <div class="point-actions">
+            //        <a href="${gmapUrl}" target="_blank" class="map-button-csv google">Google Maps</a>
+              //      <a href="${wazeUrl}" target="_blank" class="map-button-csv waze">Waze</a>
+                //</div>
+            //</div>
+//        </div>
+  //  `;
 
-    myPointsContainer.insertAdjacentHTML('beforeend', pointCardHTML);
-    myPointsSection.classList.remove('hidden');
-}
+    //myPointsContainer.insertAdjacentHTML('beforeend', pointCardHTML);
+    //myPointsSection.classList.remove('hidden');
+//}
 
 function handleAddPoint() {
     const easting = parseFloat(eastingInput.value);
@@ -483,8 +483,9 @@ function handleAddPoint() {
     });
 	
 	
-	points.push(newPoint);
-	localStorage.setItem('myPoints', JSON.stringify(points));
+//	points.push(newPoint);
+	saveToLocalStorage();
+//	localStorage.setItem('myPoints', JSON.stringify(points));
     renderSavedPoints();
     myPointsSection.classList.remove('hidden');
     document.getElementById('about-section').classList.add('hidden');
@@ -722,7 +723,18 @@ function processConvertedCsv() {
             status = 'Error: Invalid ITM values';
         } else {
             wgs84 = convertItmToWgs84(easting, northing);
-			renderSavedPoints();
+            
+            // ✅ Replace appendToMyPoints with this:
+            if (wgs84) {
+                savedPoints.push({
+                    name: pointName,
+                    easting,
+                    northing,
+                    latitude: wgs84.latitude,
+                    longitude: wgs84.longitude
+                });
+            }
+            
             if (!wgs84) status = 'Error: Conversion failed';
         }
 
@@ -735,6 +747,9 @@ function processConvertedCsv() {
         };
     });
 
+    // ✅ Render all points once after processing all CSV rows
+    renderSavedPoints();
+
     convertedPoints.forEach(point => {
         const row = csvResultsBody.insertRow();
         const statusClass = point.status === 'Success' ? 'text-green-600' : 'text-red-500';
@@ -744,18 +759,18 @@ function processConvertedCsv() {
             `<span class="${statusClass}">${point.status}</span>`;
 
         if (point.status === 'Success') {
-		const lat = point.wgs84.latitude.toFixed(6);
-		const lon = point.wgs84.longitude.toFixed(6);
-		const googleMapsUrl = `https://www.google.com/maps?q=${lat},${lon}`;
-		const wazeUrl = `https://www.waze.com/ul?ll=${lat},${lon}&navigate=yes`;
+            const lat = point.wgs84.latitude.toFixed(6);
+            const lon = point.wgs84.longitude.toFixed(6);
+            const googleMapsUrl = `https://www.google.com/maps?q=${lat},${lon}`;
+            const wazeUrl = `https://www.waze.com/ul?ll=${lat},${lon}&navigate=yes`;
 
-		actionsHtml = `
-			<td>
-				<a href="${googleMapsUrl}" target="_blank" class="map-button-csv google">Maps</a>
-				<a href="${wazeUrl}" target="_blank" class="map-button-csv waze">Waze</a>
-			</td>
-		`;
-		}
+            actionsHtml = `
+                <td>
+                    <a href="${googleMapsUrl}" target="_blank" class="map-button-csv google">Maps</a>
+                    <a href="${wazeUrl}" target="_blank" class="map-button-csv waze">Waze</a>
+                </td>
+            `;
+        }
     });
 
     document.querySelectorAll('.map-button-csv').forEach(button => {
@@ -768,7 +783,9 @@ function processConvertedCsv() {
     });
 
     csvResultsSection.classList.remove('hidden');
+    myPointsSection.classList.remove('hidden');  // ✅ Also show the points section
 }
+
 
 // --- Initialization ---
 
@@ -1005,3 +1022,20 @@ navigator.geolocation?.getCurrentPosition(
         console.warn('Geolocation error:', error.message);
     }
 );
+
+function saveToLocalStorage() {
+    // This takes your 'savedPoints' list and stores it in the browser's hidden vault
+    localStorage.setItem('itm_converter_points', JSON.stringify(savedPoints));
+};
+
+function loadFromLocalStorage() {
+    const stored = localStorage.getItem('itm_converter_points');
+    if (stored) {
+        savedPoints = JSON.parse(stored);
+        // Important: Trigger the UI to draw the points we just loaded
+        renderSavedPoints(); 
+    }
+};
+
+// Call it immediately
+loadFromLocalStorage();
