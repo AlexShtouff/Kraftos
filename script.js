@@ -320,19 +320,6 @@ function handleOrientation(event) {
     }
 }
 
-function getSavedPoints() {
-  return JSON.parse(localStorage.getItem('myPoints') || '[]');
-}
-
-
-function loadFromLocalStorage() {
-    const stored = localStorage.getItem('itm_converter_points');
-    if (stored) {
-        savedPoints = JSON.parse(stored);
-        renderSavedPoints(); 
-    }
-}
-
 function renderSavedPoints() {
     myPointsContainer.innerHTML = '';
     const template = document.getElementById('point-card-template');
@@ -472,23 +459,30 @@ function handleAddPoint() {
     }
 
     const pointName = prompt('Enter a name for this point (optional):');
-	const points = getSavedPoints();
 	
-    savedPoints.push({
-        name: pointName || `Point ${savedPoints.length + 1}`,
-        easting,
-        northing,
-        latitude,
-        longitude
-    });
-	
-	
-//	points.push(newPoint);
-	saveToLocalStorage();
-//	localStorage.setItem('myPoints', JSON.stringify(points));
-    renderSavedPoints();
-    myPointsSection.classList.remove('hidden');
-    document.getElementById('about-section').classList.add('hidden');
+    if (pointName !== null) {  
+        savedPoints.push({
+            name: pointName || `Point ${savedPoints.length + 1}`,
+            easting,
+            northing,
+            latitude,
+            longitude
+        });
+
+        saveToLocalStorage();
+		renderSavedPoints();  //  Single function call to render everything
+        myPointsSection.classList.remove('hidden');
+        
+        // Reset UI
+        eastingInput.value = '';
+        northingInput.value = '';
+        latResult.textContent = '-';
+        lonResult.textContent = '-';
+        latResultBox?.classList.remove('success');
+        lonResultBox?.classList.remove('success');
+        manualActionsContainer.style.display = 'none';
+        manualActionsContainer.innerHTML = '';
+        addPointBtn.style.display = 'none';
 }
 
 addPointBtn.addEventListener('click', () => {
@@ -499,8 +493,17 @@ addPointBtn.addEventListener('click', () => {
 
         if (pointName) { // If user entered a name
             const { easting, northing, latitude, longitude } = lastConversion;
-
-           renderSavedPoints();
+			
+			savedPoints.push({
+                name: pointName,
+                easting,
+                northing,
+                latitude,
+                longitude
+            });
+			
+			saveToLocalStorage(); // This actually triggers the save
+            renderSavedPoints();
 
             // Reset UI
             eastingInput.value = '';
