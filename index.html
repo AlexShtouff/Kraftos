@@ -1,7 +1,5 @@
-
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,7 +7,6 @@
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
-
 <body class="bg-gray-100">
     <div class="w-full max-w-4xl bg-white rounded-none md:rounded-xl shadow-lg overflow-hidden my-0 md:my-4">
         <div class="md:flex">
@@ -30,7 +27,6 @@
                             </svg>
                         </button>
                     </div>
-
                     <div id="mode-dropdown"
                         class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 hidden z-10">
                         <div class="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
@@ -46,14 +42,12 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="text-center mb-6">
                     <button id="my-points-btn"
                         class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">
                         My Points
                     </button>
                 </div>
-
                 <!-- Manual Input Interface -->
                 <div id="manual-input-interface" class="interface-section">
                     <div class="mb-4">
@@ -71,7 +65,6 @@
                         Convert
                     </button>
                     <p id="error-message" class="text-red-600 text-sm mt-2 text-center"></p>
-
                     <div class="mt-6">
                         <h2 class="text-xl font-semibold text-gray-800 mb-3">Converted WGS84 Coordinates:</h2>
                         <div id="lat-result-box" class="result-box mt-4 p-4 rounded-lg shadow-inner flex-grow">
@@ -86,10 +79,8 @@
                                 <span id="longitude-result" class="result-value text-lg text-gray-900">-</span>
                             </div>
                         </div>
-
                         <div id="manual-actions-container" class="flex justify-around mt-4 space-x-2">
                         </div>
-
                         <div class="text-center mt-4">
                             <button id="add-point-btn" class="w-full md:w-auto bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-purple-300" style="display: none;">
                                 Add Point to List
@@ -97,7 +88,6 @@
                         </div>
                     </div>
                 </div>
-
                 <!-- CSV Upload Interface -->
                 <div id="csv-upload-interface" class="interface-section hidden">
                     <div class="mb-4">
@@ -105,7 +95,6 @@
                         <input type="file" id="csv-upload" accept=".csv"
                             class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                     </div>
-
                     <div id="csv-column-selection" class="mb-4 space-y-4">
                         <div>
                             <label for="point-name-column" class="block text-sm font-medium text-gray-700">Select Point
@@ -129,13 +118,11 @@
                             </select>
                         </div>
                     </div>
-
                     <button id="process-csv-btn"
                         class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300">
                         Process CSV
                     </button>
                     <p id="csv-error-message" class="text-red-600 text-sm mt-2 text-center"></p>
-
                     <div id="csv-results-section" class="mt-6" style="display: none;">
                         <h2 class="text-xl font-semibold text-gray-800 mb-3">CSV Conversion Results:</h2>
                         <div class="csv-table-container">
@@ -156,11 +143,9 @@
                         </div>
                     </div>
                 </div>
-
                 <!-- Static Data Interface -->
                 <div id="static-data-interface" class="interface-section hidden">
                     <h2 class="text-xl font-bold text-gray-800 mb-6 text-center">Static measurements</h2>
-
                     <!-- Device Toggle -->
                     <div class="flex justify-center mb-8">
                         <legend class="px-2 text-sm font-semibold text-indigo-600 bg-white rounded">Choose receiver type
@@ -179,11 +164,9 @@
 
                         </div>
                     </div>
-
                     <fieldset class="border border-gray-300 rounded-lg p-5 mb-6 bg-white shadow-sm">
                         <legend class="px-2 text-sm font-semibold text-indigo-600 bg-white rounded">Point Metadata
                         </legend>
-
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 							<input type="text" id="surveyor-name" placeholder="Surveyor Name"
 								class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 col-span-1 md:col-span-2">
@@ -217,7 +200,6 @@
                     <fieldset class="border border-gray-300 rounded-lg p-5 mb-6 bg-white shadow-sm">
                         <legend class="px-2 text-sm font-semibold text-indigo-600 bg-white rounded">Height (measured)
                         </legend>
-
                         <!-- Antenna Inputs -->
                         <div class="mb-5">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Antenna</label>
@@ -228,7 +210,6 @@
                                     class="block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                             </div>
                         </div>
-
                         <!-- Pahit Input -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Pahit</label>
@@ -236,7 +217,6 @@
                                 class="block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         </div>
                     </fieldset>
-
                     <!-- Action Button -->
                     <div class="mt-6 text-center">
                         <button type="button" id="calc-height-btn"
@@ -244,12 +224,10 @@
                             Calculate Height
                         </button>
                     </div>
-
                     <!-- Height Results -->
                     <fieldset class="border border-gray-300 rounded-lg p-5 mb-6 bg-white shadow-sm">
                         <legend class="px-2 text-sm font-semibold text-indigo-600 bg-white rounded">Height (calculated)
                         </legend>
-
                         <div id="height-results" class="mt-6 hidden">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div class="bg-blue-50 p-3 rounded-lg border border-blue-200">
@@ -292,7 +270,6 @@
 							</div>
 						</div>
 					</div>
-
 					<div class="text-center mb-10">
                         <button id="save-height-btn"
                             class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition-transform transform hover:scale-105">
@@ -302,9 +279,7 @@
                     </div>
 
                 </div>
-
             </div>
-
             <div
                 class="md:w-1/2 p-4 md:p-6 bg-gray-50 border-t md:border-t-0 md:border-l border-gray-200 flex flex-col">
                 <div id="my-points-section" class="flex-grow hidden">
@@ -317,7 +292,6 @@
                     <div id="my-points-container" class="space-y-4">
                     </div>
                 </div>
-
                 <div id="about-section" class="bg-gray-50 rounded-b-xl mt-auto">
                     <h3 class="font-semibold text-gray-700">About the Coordinate Systems</h3>
                     <p class="mt-2 text-sm text-gray-600">
@@ -333,33 +307,31 @@
         </div>
     </div>
 	<template id="point-card-template">
-		<div class="point-card bg-white rounded-xl shadow-md border border-gray-100 p-4 mb-4">
-			<div class="flex justify-between items-start mb-2">
-				<div>
-					<h3 class="point-name font-bold text-gray-900 text-lg"></h3>
-					<p class="point-date text-xs text-gray-500"></p>
-				</div>
-				<button class="delete-point-btn text-red-500 hover:text-red-700 transition-colors">
-					🗑️
-				</button>
+		<div class="point-card bg-white rounded-xl shadow-md border border-gray-100 p-4 mb-4 relative">
+			<button class="delete-point-btn absolute top-2 right-2 text-red-400 hover:text-red-600 p-2">
+				🗑️
+			</button>
+
+			<div class="mb-2">
+				<h3 class="point-name font-bold text-gray-900 text-lg"></h3>
+				<p class="point-date text-xs text-gray-500"></p>
 			</div>
 
-			<div class="grid grid-cols-2 gap-2 text-sm bg-gray-50 p-2 rounded">
-				<div>
-					<span class="text-gray-500">Lat:</span>
-					<span class="point-lat font-mono font-medium"></span>
-				</div>
-				<div>
-					<span class="text-gray-500">Lon:</span>
-					<span class="point-lon font-mono font-medium"></span>
-				</div>
+			<div class="grid grid-cols-2 gap-2 text-sm bg-gray-50 p-2 rounded mb-3">
+				<div><span class="text-gray-500">Lat:</span> <span class="point-lat font-mono"></span></div>
+				<div><span class="text-gray-500">Lon:</span> <span class="point-lon font-mono"></span></div>
 			</div>
 
-			<div class="distance-row-container mt-3">
-				 <div class="text-blue-700 font-bold">
+			<div class="distance-row-container flex justify-between items-center bg-blue-50 p-3 rounded-lg">
+				<div class="text-blue-700 font-bold">
 					Distance: <span class="point-distance">0</span> m
-				 </div>
-				 <div class="direction-arrow text-2xl text-blue-600 transition-transform duration-300">↑</div>
+				</div>
+				<div class="direction-arrow text-2xl text-blue-600">↑</div>
+			</div>
+
+			<div class="flex gap-2 mt-3">
+				<a class="waze-link flex-1 text-center py-2 rounded-lg text-sm font-bold bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors">Waze</a>
+				<a class="maps-link flex-1 text-center py-2 rounded-lg text-sm font-bold bg-green-100 text-green-700 hover:bg-green-200 transition-colors">Google Maps</a>
 			</div>
 		</div>
 	</template>
@@ -367,7 +339,5 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.10.0/proj4.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="script.js"></script>
-
 </body>
-
 </html>
