@@ -178,12 +178,12 @@ function updateDirectionArrows() {
     });
 }
     
-function handleOrientation(event) {
-    const now = Date.now();
-    if (now - lastUpdate < 30) return; // Only update every 30ms
-    lastUpdate = now;
+//function handleOrientation(event) {
+  //  const now = Date.now();
+    //if (now - lastUpdate < 30) return; // Only update every 30ms
+    //lastUpdate = now;
 	
-	if (event.alpha === null) return;
+	//if (event.alpha === null) return;
 
     // alpha = compass heading (0 = north)
     //deviceHeading = event.alpha;
@@ -982,7 +982,9 @@ function processConvertedCsv() {
 
 document.addEventListener('DOMContentLoaded', () => {
     // Event listeners
-    if (convertBtn) convertBtn.addEventListener('click', handleManualConvert);
+    loadFromLocalStorage();
+	
+	if (convertBtn) convertBtn.addEventListener('click', handleManualConvert);
 	
 	startUserLocationTracking();
     startDeviceOrientationTracking();
