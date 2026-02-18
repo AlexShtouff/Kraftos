@@ -332,11 +332,42 @@
             </div>
         </div>
     </div>
+	<template id="point-card-template">
+		<div class="point-card bg-white rounded-xl shadow-md border border-gray-100 p-4 mb-4">
+			<div class="flex justify-between items-start mb-2">
+				<div>
+					<h3 class="point-name font-bold text-gray-900 text-lg"></h3>
+					<p class="point-date text-xs text-gray-500"></p>
+				</div>
+				<button class="delete-point-btn text-red-500 hover:text-red-700 transition-colors">
+					🗑️
+				</button>
+			</div>
+
+			<div class="grid grid-cols-2 gap-2 text-sm bg-gray-50 p-2 rounded">
+				<div>
+					<span class="text-gray-500">Lat:</span>
+					<span class="point-lat font-mono font-medium"></span>
+				</div>
+				<div>
+					<span class="text-gray-500">Lon:</span>
+					<span class="point-lon font-mono font-medium"></span>
+				</div>
+			</div>
+
+			<div class="distance-row-container mt-3">
+				 <div class="text-blue-700 font-bold">
+					Distance: <span class="point-distance">0</span> m
+				 </div>
+				 <div class="direction-arrow text-2xl text-blue-600 transition-transform duration-300">↑</div>
+			</div>
+		</div>
+	</template>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.10.0/proj4.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-
     <script src="script.js"></script>
+
 </body>
 
 </html>
