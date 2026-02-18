@@ -982,7 +982,7 @@ function processConvertedCsv() {
 
 document.addEventListener('DOMContentLoaded', () => {
     // Event listeners
-    loadFromLocalStorage();
+    //loadFromLocalStorage();
 	
 	if (convertBtn) convertBtn.addEventListener('click', handleManualConvert);
 	
