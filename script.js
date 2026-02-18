@@ -320,6 +320,14 @@ function handleOrientation(event) {
     }
 }
 
+function loadFromLocalStorage() {
+    const stored = localStorage.getItem('itm_converter_points');
+    if (stored) {
+        savedPoints = JSON.parse(stored);
+        renderSavedPoints(); 
+    }
+}
+
 function renderSavedPoints() {
     myPointsContainer.innerHTML = '';
     const template = document.getElementById('point-card-template');
@@ -339,7 +347,11 @@ function renderSavedPoints() {
         // Координаты (форматируем до 6 знаков, как принято в GPS)
         clone.querySelector('.point-lat').textContent = Number(point.latitude).toFixed(6);
         clone.querySelector('.point-lon').textContent = Number(point.longitude).toFixed(6);
-
+		
+		// Настраиваем ссылки навигации
+		clone.querySelector('.waze-link').href = `https://www.waze.com/ul?ll=${point.latitude},${point.longitude}&navigate=yes`;
+		clone.querySelector('.maps-link').href = `https://www.google.com/maps/search/?api=1&query=${point.latitude},${point.longitude}`;
+		
         // --- Логика удаления ---
         const deleteBtn = clone.querySelector('.delete-point-btn');
         deleteBtn.onclick = () => {
