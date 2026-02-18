@@ -320,6 +320,11 @@ function handleOrientation(event) {
     }
 }
 
+function getSavedPoints() {
+  return JSON.parse(localStorage.getItem('myPoints') || '[]');
+}
+
+
 function loadFromLocalStorage() {
     const stored = localStorage.getItem('itm_converter_points');
     if (stored) {
@@ -374,7 +379,7 @@ function renderSavedPoints() {
                 point.latitude, point.longitude
             );
             
-            // Здесь мы будем вращать стрелку (обсудим в следующем шаге)
+            // Здесь мы будем вращать стрелку 
             const arrow = clone.querySelector('.direction-arrow');
             arrow.dataset.bearing = bearing; // Сохраняем азимут в атрибут для анимации
         }
@@ -467,7 +472,8 @@ function handleAddPoint() {
     }
 
     const pointName = prompt('Enter a name for this point (optional):');
-
+	const points = getSavedPoints();
+	
     savedPoints.push({
         name: pointName || `Point ${savedPoints.length + 1}`,
         easting,
@@ -475,7 +481,10 @@ function handleAddPoint() {
         latitude,
         longitude
     });
-
+	
+	
+	points.push(newPoint);
+	localStorage.setItem('myPoints', JSON.stringify(points));
     renderSavedPoints();
     myPointsSection.classList.remove('hidden');
     document.getElementById('about-section').classList.add('hidden');
@@ -490,8 +499,7 @@ addPointBtn.addEventListener('click', () => {
         if (pointName) { // If user entered a name
             const { easting, northing, latitude, longitude } = lastConversion;
 
-            // Append to My Points List
-            appendToMyPoints(pointName, easting, northing, latitude, longitude);
+           renderSavedPoints();
 
             // Reset UI
             eastingInput.value = '';
@@ -714,7 +722,7 @@ function processConvertedCsv() {
             status = 'Error: Invalid ITM values';
         } else {
             wgs84 = convertItmToWgs84(easting, northing);
-			appendToMyPoints(pointName, easting, northing, wgs84.latitude, wgs84.longitude);
+			renderSavedPoints();
             if (!wgs84) status = 'Error: Conversion failed';
         }
 
