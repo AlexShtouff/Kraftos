@@ -285,7 +285,7 @@ function updateArrowsRotation() {
 
         // Итоговый угол поворота
         // 360 добавляем, чтобы не было отрицательных чисел
-        let finalRotation = (bearing - (deviceHeading + declination) - 90 + 360) % 360;
+        let finalRotation = (bearing - (deviceHeading + declination) + 90 + 360) % 360;
 
         // Плавное вращение через CSS
         arrow.style.transform = `rotate(${finalRotation}deg)`;
