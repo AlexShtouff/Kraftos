@@ -48,7 +48,14 @@
                         My Points
                     </button>
                 </div>
-                <!-- Manual Input Interface -->
+                <div id="compass-setup-container" class="p-4 text-center">
+					<button id="activate-compass-btn" 
+							class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-all">
+						📍 Включить навигацию
+					</button>
+					<p id="compass-status" class="text-sm text-gray-500 mt-2">Требуется доступ к датчикам движения</p>
+				</div>
+				<!-- Manual Input Interface -->
                 <div id="manual-input-interface" class="interface-section">
                     <div class="mb-4">
                         <label for="easting" class="block text-sm font-medium text-gray-700">Easting (ITM):</label>
@@ -280,7 +287,7 @@
 
                 </div>
             </div>
-            <div
+			<div
                 class="md:w-1/2 p-4 md:p-6 bg-gray-50 border-t md:border-t-0 md:border-l border-gray-200 flex flex-col">
                 <div id="my-points-section" class="flex-grow hidden">
                     <h2 class="text-2xl font-semibold text-gray-800 mb-4 text-center">My Points</h2>
