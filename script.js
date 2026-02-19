@@ -58,6 +58,11 @@ let savedPoints = [];
 let csvData = [];
 let csvHeaders = [];
 
+// Define ITM projection (Israel Transverse Mercator - IG05/IG12)
+// Defined for proj4js
+const ITM_PROJ_DEF = '+proj=tmerc +lat_0=31.73439388888889 +lon_0=35.20451694444445 +k=1.0000067 +x_0=219521.4 +y_0=626907.39 +ellps=GRS80 +towgs84=-48,55,52,0,0,0,0 +units=m +no_defs';
+
+// --- Helper Functions ---
 /**
  * Converts ITM coordinates (Easting, Northing) to WGS84 (Latitude, Longitude).
  */
