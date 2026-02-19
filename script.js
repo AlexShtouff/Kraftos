@@ -516,6 +516,7 @@ function handleAddPoint() {
         manualActionsContainer.style.display = 'none';
         manualActionsContainer.innerHTML = '';
         addPointBtn.style.display = 'none';
+	}
 }
 
 addPointBtn.addEventListener('click', () => {
