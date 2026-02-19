@@ -170,6 +170,21 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     return R * c; // Distance in km
 }
 
+function calculateBearing(lat1, lon1, lat2, lon2) {
+    const φ1 = lat1 * Math.PI / 180;
+    const φ2 = lat2 * Math.PI / 180;
+    const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+    const y = Math.sin(Δλ) * Math.cos(φ2);
+    const x =
+        Math.cos(φ1) * Math.sin(φ2) -
+        Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+
+    const θ = Math.atan2(y, x);
+    return (θ * 180 / Math.PI + 360) % 360;
+}
+
+
 // --- Event Listener for the single convert button ---
 
 
@@ -862,13 +877,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (processCsvBtn) processCsvBtn.addEventListener('click', processConvertedCsv);
 
     // --- SAVE FUNCTIONALITY FIXED (Static Page) ---
-    const saveBtn = document.getElementById('save-btn');
+    const saveBtn = document.getElementById('save-height-btn');
     const saveError = document.getElementById('save-error');
 
     if (saveBtn) {
         saveBtn.addEventListener('click', () => {
             // Correct IDs based on HTML
-            const surveyor = document.getElementById('surveyor')?.value.trim();
+            const surveyor = document.getElementById('surveyor-name')?.value.trim();
             const pointName = document.getElementById('point-name')?.value.trim();
             const date = document.getElementById('survey-date')?.value.trim();
             const startTime = document.getElementById('start-time')?.value.trim();
@@ -980,7 +995,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
             // Clear all input fields after successful save
-            document.getElementById('surveyor').value = '';
+            document.getElementById('surveyor-name').value = '';
             document.getElementById('point-name').value = '';
             document.getElementById('receiver-point').value = '';
             document.getElementById('survey-date').value = '';
