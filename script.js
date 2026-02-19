@@ -416,13 +416,17 @@ function renderSavedPoints() {
         // --- Логика расстояния и стрелки ---
         const arrow = clone.querySelector('.direction-arrow');
         
-        if (userLocation) {
-            const dist = calculateDistance(
-                userLocation.latitude, userLocation.longitude,
-                point.latitude, point.longitude
-            );
+       if (userLocation) {
+			const distKm = calculateDistance(
+				userLocation.latitude, userLocation.longitude,
+				point.latitude, point.longitude
+			);
+			
+			// Convert KM to Meters for the formatter
+			const distMeters = distKm * 1000; 
+			clone.querySelector('.point-distance').textContent = formatDistance(distMeters);
             // Используем нашу новую функцию для красивого вывода
-			clone.querySelector('.point-distance').textContent = formatDistance(dist);
+			//clone.querySelector('.point-distance').textContent = formatDistance(dist);
 
             const bearing = calculateBearing(
                 userLocation.latitude, userLocation.longitude,
@@ -1073,19 +1077,32 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Get user's location
-navigator.geolocation?.getCurrentPosition(
+navigator.geolocation?.watchPosition(
     position => {
-        userLocation = {
+        // Update global user location
+		userLocation = {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude
         };
-        myLatSpan.textContent = userLocation.latitude.toFixed(6);
-        myLonSpan.textContent = userLocation.longitude.toFixed(6);
+        // Update the coordinates in the UI
+        if (myLatSpan) myLatSpan.textContent = userLocation.latitude.toFixed(6);
+        if (myLonSpan) myLonSpan.textContent = userLocation.longitude.toFixed(6);
+		
+		// Re-render the points list whenever the location changes 
+        // to update the distance values and arrows
+        if (savedPoints.length > 0) {
+            renderSavedPoints();
+        }
     },
     error => {
         myLatSpan.textContent = 'Unavailable';
         myLonSpan.textContent = 'Unavailable';
         console.warn('Geolocation error:', error.message);
+    },
+	{
+        enableHighAccuracy: true, // Recommended for better distance tracking
+        timeout: 5000,
+        maximumAge: 0
     }
 );
 
