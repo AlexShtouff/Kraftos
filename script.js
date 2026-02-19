@@ -170,6 +170,19 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     return R * c; // Distance in km
 }
 
+function formatDistance(meters) {
+    if (meters >= 1000) {
+        // Больше 1 км: "30.0 km"
+        return (meters / 1000).toFixed(1) + ' km';
+    } else if (meters >= 10) {
+        // От 10 м до 1000 м: "932 m" (целое число)
+        return Math.round(meters) + ' m';
+    } else {
+        // Меньше 10 м: "9.04 m"
+        return meters.toFixed(2) + ' m';
+    }
+}
+
 function calculateBearing(lat1, lon1, lat2, lon2) {
     const φ1 = lat1 * Math.PI / 180;
     const φ2 = lat2 * Math.PI / 180;
@@ -408,7 +421,8 @@ function renderSavedPoints() {
                 userLocation.latitude, userLocation.longitude,
                 point.latitude, point.longitude
             );
-            clone.querySelector('.point-distance').textContent = dist.toFixed(1);
+            // Используем нашу новую функцию для красивого вывода
+			clone.querySelector('.point-distance').textContent = formatDistance(dist);
 
             const bearing = calculateBearing(
                 userLocation.latitude, userLocation.longitude,
