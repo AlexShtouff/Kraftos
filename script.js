@@ -57,12 +57,9 @@ let userLocation = null;
 let savedPoints = [];
 let csvData = [];
 let csvHeaders = [];
+let deviceHeading = 0;
+let arrowElements = [];
 
-// Define ITM projection (Israel Transverse Mercator - IG05/IG12)
-// Defined for proj4js
-const ITM_PROJ_DEF = '+proj=tmerc +lat_0=31.73439388888889 +lon_0=35.20451694444445 +k=1.0000067 +x_0=219521.4 +y_0=626907.39 +ellps=GRS80 +towgs84=-48,55,52,0,0,0,0 +units=m +no_defs';
-
-// --- Helper Functions ---
 /**
  * Converts ITM coordinates (Easting, Northing) to WGS84 (Latitude, Longitude).
  */
@@ -147,9 +144,15 @@ function convertItmToWgs84(easting, northing) {
 }
 
 function calculateMagneticDeclination(lat, lon) {
-    // В Израиле склонение положительное (East)
-    // Сейчас оно составляет примерно 5.2 - 5.5 градусов.
-    return 5.3; 
+    // Базовое значение для центра Израиля на 2026 год ~5.4 - 5.5
+    let baseDeclination = 5.45; 
+
+    // Небольшая поправка на широту (на севере Израиля склонение чуть выше, чем на юге)
+    // Разница между севером и югом страны составляет около 0.3-0.4 градуса
+    const latDiff = lat - 32.0; // Считаем от широты Тель-Авива
+    const latCorrection = latDiff * 0.1; 
+
+    return baseDeclination + latCorrection;
 }
 /**
  * Calculates the distance between two lat/lon points in kilometers using the Haversine formula.
@@ -272,21 +275,17 @@ function renderManualResults(result) {
     addPointBtn.style.display = 'inline-block';
 }
 
-let deviceHeading = 0;
-
 function updateArrowsRotation() {
     const declination = userLocation ? calculateMagneticDeclination(userLocation.latitude, userLocation.longitude) : 5.3;
-    const arrows = document.querySelectorAll('.direction-arrow');
 
-    arrows.forEach(arrow => {
-        const bearing = parseFloat(arrow.dataset.bearing); // Берем азимут, сохраненный в шаблоне
+    arrowElements.forEach(arrow => {
+        const bearing = parseFloat(arrow.dataset.bearing);
         if (isNaN(bearing)) return;
 
-        // Итоговый угол поворота
-        // 360 добавляем, чтобы не было отрицательных чисел
-        let finalRotation = (bearing - (deviceHeading + declination) + 360) % 360;
+        // -90 поворачивает стрелку против часовой стрелки
+        let finalRotation = (bearing - (deviceHeading + declination) - 90 + 720) % 360;
 
-        // Плавное вращение через CSS
+        // Используем transform так, чтобы не конфликтовать с другими стилями
         arrow.style.transform = `rotate(${finalRotation}deg)`;
     });
 }
@@ -306,6 +305,41 @@ function startCompass() {
     }
 }
 
+async function requestCompassPermission() {
+    const statusText = document.getElementById('compass-status');
+    const btn = document.getElementById('activate-compass-btn');
+
+    try {
+        // Проверка для iOS (Safari)
+        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+            const permission = await DeviceOrientationEvent.requestPermission();
+            
+            if (permission === 'granted') {
+                window.addEventListener('deviceorientation', handleOrientation);
+                finalizeCompassActivation(btn, statusText);
+            } else {
+                statusText.textContent = "Доступ отклонен ❌";
+                statusText.classList.add('text-red-500');
+            }
+        } else {
+            // Для Android и других браузеров (обычно разрешение не требуется или запрашивается автоматически)
+            window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+            finalizeCompassActivation(btn, statusText);
+        }
+    } catch (error) {
+        console.error(error);
+        statusText.textContent = "Ошибка при включении ⚠️";
+    }
+}
+
+function finalizeCompassActivation(btn, status) {
+    status.textContent = "Компас активен ✅";
+    status.classList.replace('text-gray-500', 'text-green-500');
+    btn.style.display = 'none'; // Скрываем кнопку после успеха
+}
+
+document.getElementById('activate-compass-btn').addEventListener('click', requestCompassPermission);
+
 function handleOrientation(event) {
     // Пытаемся получить истинный или магнитный курс
     let heading = event.webkitCompassHeading || event.alpha;
@@ -322,6 +356,7 @@ function handleOrientation(event) {
 
 function renderSavedPoints() {
     myPointsContainer.innerHTML = '';
+    arrowElements = []; // Очищаем список при каждой перерисовке
     const template = document.getElementById('point-card-template');
 
     if (savedPoints.length === 0) {
@@ -332,27 +367,27 @@ function renderSavedPoints() {
     savedPoints.forEach((point, index) => {
         const clone = template.content.cloneNode(true);
 
-        // --- Заполняем текстовые поля ---
+        // --- Заполнение текстовых полей (Ваша логика) ---
         clone.querySelector('.point-name').textContent = point.name || `Point ${index + 1}`;
         clone.querySelector('.point-date').textContent = `Saved: ${point.timestamp}`;
-        
-        // Координаты (форматируем до 6 знаков, как принято в GPS)
         clone.querySelector('.point-lat').textContent = Number(point.latitude).toFixed(6);
         clone.querySelector('.point-lon').textContent = Number(point.longitude).toFixed(6);
-		
-		// Настраиваем ссылки навигации
-		clone.querySelector('.waze-link').href = `https://www.waze.com/ul?ll=${point.latitude},${point.longitude}&navigate=yes`;
-		clone.querySelector('.maps-link').href = `https://www.google.com/maps/search/?api=1&query=${point.latitude},${point.longitude}`;
-		
-        // --- Логика удаления ---
+        
+        // Исправленные ссылки (убрал опечатку в Google Maps)
+        clone.querySelector('.waze-link').href = `https://www.waze.com/ul?ll=${point.latitude},${point.longitude}&navigate=yes`;
+        clone.querySelector('.maps-link').href = `https://www.google.com/maps?q=${point.latitude},${point.longitude}`;
+        
+        // --- Логика удаления (Ваша логика) ---
         const deleteBtn = clone.querySelector('.delete-point-btn');
         deleteBtn.onclick = () => {
             savedPoints.splice(index, 1);
             saveToLocalStorage();
             renderSavedPoints();
         };
-		
-	    // --- Логика расстояния и стрелки ---
+        
+        // --- Логика расстояния и стрелки ---
+        const arrow = clone.querySelector('.direction-arrow');
+        
         if (userLocation) {
             const dist = calculateDistance(
                 userLocation.latitude, userLocation.longitude,
@@ -360,15 +395,13 @@ function renderSavedPoints() {
             );
             clone.querySelector('.point-distance').textContent = dist.toFixed(1);
 
-            // Азимут (Bearings)
             const bearing = calculateBearing(
                 userLocation.latitude, userLocation.longitude,
                 point.latitude, point.longitude
             );
             
-            // Здесь мы будем вращать стрелку 
-            const arrow = clone.querySelector('.direction-arrow');
-            arrow.dataset.bearing = bearing; // Сохраняем азимут в атрибут для анимации
+            arrow.dataset.bearing = bearing; // Сохраняем азимут
+            arrowElements.push(arrow); // ВАЖНО: сохраняем ссылку для функции поворота
         }
 
         myPointsContainer.appendChild(clone);
