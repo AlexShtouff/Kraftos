@@ -310,8 +310,7 @@ function updateArrowsRotation() {
         const bearing = parseFloat(arrow.dataset.bearing);
         if (isNaN(bearing)) return;
 
-        // -90 поворачивает стрелку против часовой стрелки
-        let finalRotation = (bearing - (deviceHeading + declination) - 90 + 720) % 360;
+        let finalRotation = (bearing - (deviceHeading + declination) + 720) % 360;
 
         // Используем transform так, чтобы не конфликтовать с другими стилями
         arrow.style.transform = `rotate(${finalRotation}deg)`;
@@ -1122,3 +1121,4 @@ function loadFromLocalStorage() {
 
 // Call it immediately
 loadFromLocalStorage();
+
