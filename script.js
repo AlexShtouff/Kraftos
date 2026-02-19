@@ -142,15 +142,9 @@ function convertItmToWgs84(easting, northing) {
 }
 
 function calculateMagneticDeclination(lat, lon) {
-    // Базовое значение для центра Израиля на 2026 год ~5.4 - 5.5
-    let baseDeclination = 5.45; 
-
-    // Небольшая поправка на широту (на севере Израиля склонение чуть выше, чем на юге)
-    // Разница между севером и югом страны составляет около 0.3-0.4 градуса
-    const latDiff = lat - 32.0; // Считаем от широты Тель-Авива
-    const latCorrection = latDiff * 0.1; 
-
-    return baseDeclination + latCorrection;
+    // В Израиле склонение положительное (East)
+    // Сейчас оно составляет примерно 5.2 - 5.5 градусов.
+    return 5.3; 
 }
 /**
  * Calculates the distance between two lat/lon points in kilometers using the Haversine formula.
@@ -285,7 +279,7 @@ function updateArrowsRotation() {
 
         // Итоговый угол поворота
         // 360 добавляем, чтобы не было отрицательных чисел
-        let finalRotation = (bearing - (deviceHeading + declination) + 90 + 360) % 360;
+        let finalRotation = (bearing - (deviceHeading + declination) + 360) % 360;
 
         // Плавное вращение через CSS
         arrow.style.transform = `rotate(${finalRotation}deg)`;
